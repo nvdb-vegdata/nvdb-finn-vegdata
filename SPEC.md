@@ -54,6 +54,7 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
 ### Map Styling
 - Veglenke line color can be changed at runtime via the "Innstillinger" menu in the map
 - Colors are persisted in localStorage
+- A metric scale bar is shown in the lower-left corner of the map
 - A debug console API is available on `window.nvdbMap` (e.g. `nvdbMap.setVeglenkeColor('#00ff00')`, `nvdbMap.getVeglenkeColor()`)
 
 ### Measuring Tool

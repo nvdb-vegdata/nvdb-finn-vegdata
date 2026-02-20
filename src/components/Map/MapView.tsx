@@ -1,5 +1,6 @@
 import { useAtom, useAtomValue } from 'jotai'
 import { Ruler, Settings } from 'lucide-react'
+import ScaleLine from 'ol/control/ScaleLine'
 import { click } from 'ol/events/condition'
 import Feature from 'ol/Feature'
 import type { LineString, Polygon } from 'ol/geom'
@@ -295,6 +296,8 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
         zoom: zoom,
       }),
     })
+
+    map.addControl(new ScaleLine({ units: 'metric' }))
 
     const select = new Select({
       condition: click,
