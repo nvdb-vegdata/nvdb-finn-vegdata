@@ -56,6 +56,14 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
 - Colors are persisted in localStorage
 - A debug console API is available on `window.nvdbMap` (e.g. `nvdbMap.setVeglenkeColor('#00ff00')`, `nvdbMap.getVeglenkeColor()`)
 
+### Measuring Tool
+- A ruler button in the top-right map toolbar activates the measure tool
+- Click on the map to place points; each segment shows its length at the midpoint (when multi-segment)
+- The total cumulative distance is shown at the last point (red badge)
+- Double-click to finish a measurement; the labels remain on the map
+- Click the ruler button again (or start a new measurement) to clear the previous measurement
+- Distances are computed in UTM33 (meters); values >= 1 km are shown in km with 2 decimal places
+
 ## UI Design System
 
 The UI uses a small set of global CSS tokens (in `src/index.css` under `:root`) to keep spacing, borders, radii and shadows consistent.

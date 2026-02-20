@@ -1,13 +1,14 @@
 import { useAtom, useAtomValue } from 'jotai'
-import { Settings } from 'lucide-react'
+import { Ruler, Settings } from 'lucide-react'
 import { click } from 'ol/events/condition'
 import Feature from 'ol/Feature'
-import type { Polygon } from 'ol/geom'
+import type { LineString, Polygon } from 'ol/geom'
 import type ImageTile from 'ol/ImageTile'
 import { Draw, Select } from 'ol/interaction'
 import TileLayer from 'ol/layer/Tile'
 import VectorLayer from 'ol/layer/Vector'
 import OLMap from 'ol/Map'
+import { unByKey } from 'ol/Observable'
 import Overlay from 'ol/Overlay'
 import View from 'ol/View'
 import 'ol/ol.css'
@@ -15,7 +16,7 @@ import { transform } from 'ol/proj'
 import VectorSource from 'ol/source/Vector'
 import WMTS from 'ol/source/WMTS'
 import XYZ from 'ol/source/XYZ'
-import { Fill, Stroke, Style } from 'ol/style'
+import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style'
 import TileGrid from 'ol/tilegrid/TileGrid'
 import WMTSTileGrid from 'ol/tilegrid/WMTS'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -111,7 +112,11 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
   const selectedLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
   const settingsRef = useRef<HTMLDivElement>(null)
   const clipOnlySelectionRef = useRef(false)
+  const measureSource = useRef(new VectorSource())
+  const measureInteraction = useRef<Draw | null>(null)
+  const measureOverlays = useRef<Overlay[]>([])
   const [isDrawing, setIsDrawing] = useState(false)
+  const [isMeasuring, setIsMeasuring] = useState(false)
   const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null)
   const [searchDateDraft, setSearchDateDraft] = useState(searchDate)
   const referenceDate = searchDateEnabled && searchDate ? searchDate : getTodayDate()
@@ -214,6 +219,19 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
     })
     selectedLayerRef.current = selectedLayer
 
+    const measureLayer = new VectorLayer({
+      source: measureSource.current,
+      style: new Style({
+        stroke: new Stroke({ color: '#e74c3c', width: 3, lineDash: [10, 6] }),
+        image: new CircleStyle({
+          radius: 5,
+          fill: new Fill({ color: '#e74c3c' }),
+          stroke: new Stroke({ color: '#ffffff', width: 2 }),
+        }),
+      }),
+      zIndex: 101,
+    })
+
     const overlay = new Overlay({
       element: popupRef.current ?? undefined,
       autoPan: { animation: { duration: 250 } },
@@ -268,7 +286,7 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
 
     const map = new OLMap({
       target: mapRef.current,
-      layers: [geodataLayer, kartverketLayer, drawLayer, veglenkeLayer, stedfestingLayer, highlightLayer, egengeometriLayer, selectedLayer],
+      layers: [geodataLayer, kartverketLayer, drawLayer, veglenkeLayer, stedfestingLayer, highlightLayer, egengeometriLayer, selectedLayer, measureLayer],
       overlays: [overlay],
       view: new View({
         projection: MAP_PROJECTION,
@@ -482,6 +500,136 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
     setSearchDate(nextDate)
   }, [searchDate, searchDateDraft, setSearchDate])
 
+  const clearMeasure = useCallback(() => {
+    if (measureInteraction.current && mapInstance.current) {
+      mapInstance.current.removeInteraction(measureInteraction.current)
+      measureInteraction.current = null
+    }
+    measureSource.current.clear()
+    for (const overlay of measureOverlays.current) {
+      mapInstance.current?.removeOverlay(overlay)
+    }
+    measureOverlays.current = []
+    setIsMeasuring(false)
+  }, [])
+
+  const startMeasuring = useCallback(() => {
+    if (!mapInstance.current) return
+
+    clearMeasure()
+
+    const draw = new Draw({
+      source: measureSource.current,
+      type: 'LineString',
+      style: new Style({
+        stroke: new Stroke({ color: '#e74c3c', width: 3, lineDash: [10, 6] }),
+        image: new CircleStyle({
+          radius: 5,
+          fill: new Fill({ color: '#e74c3c' }),
+          stroke: new Stroke({ color: '#ffffff', width: 2 }),
+        }),
+      }),
+    })
+
+    let sketchListener: (() => void) | null = null
+
+    const createMeasureOverlay = (position: number[]): Overlay => {
+      const el = document.createElement('div')
+      el.className = 'measure-tooltip'
+      const overlay = new Overlay({
+        element: el,
+        offset: [0, -15],
+        positioning: 'bottom-center',
+        stopEvent: false,
+      })
+      mapInstance.current?.addOverlay(overlay)
+      overlay.setPosition(position)
+      measureOverlays.current.push(overlay)
+      return overlay
+    }
+
+    const formatLength = (lengthMeters: number): string => {
+      if (lengthMeters >= 1000) {
+        return `${(lengthMeters / 1000).toFixed(2)} km`
+      }
+      return `${Math.round(lengthMeters)} m`
+    }
+
+    const updateOverlays = (geom: LineString) => {
+      const coords = geom.getCoordinates()
+      if (coords.length < 2) return
+
+      // Remove old overlays (we rebuild each time)
+      for (const overlay of measureOverlays.current) {
+        mapInstance.current?.removeOverlay(overlay)
+      }
+      measureOverlays.current = []
+
+      let totalLength = 0
+      for (let i = 1; i < coords.length; i++) {
+        const [x1 = 0, y1 = 0] = coords[i - 1] ?? []
+        const [x2 = 0, y2 = 0] = coords[i] ?? []
+        const segmentLength = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        totalLength += segmentLength
+
+        // Segment label at midpoint
+        if (coords.length > 2) {
+          const midpoint = [(x1 + x2) / 2, (y1 + y2) / 2]
+          const segOverlay = createMeasureOverlay(midpoint)
+          const el = segOverlay.getElement()
+          if (el) {
+            el.className = 'measure-tooltip measure-tooltip-segment'
+            el.textContent = formatLength(segmentLength)
+          }
+        }
+      }
+
+      // Total label at last coordinate
+      const lastCoord = coords[coords.length - 1]
+      if (lastCoord) {
+        const totalOverlay = createMeasureOverlay(lastCoord)
+        const el = totalOverlay.getElement()
+        if (el) {
+          el.className = 'measure-tooltip measure-tooltip-total'
+          el.textContent = formatLength(totalLength)
+        }
+      }
+    }
+
+    draw.on('drawstart', (event) => {
+      const sketch = event.feature
+      const geomChangeKey = sketch.getGeometry()?.on('change', (e) => {
+        const geom = e.target as LineString
+        updateOverlays(geom)
+      })
+      sketchListener = () => {
+        if (geomChangeKey) unByKey(geomChangeKey)
+      }
+    })
+
+    draw.on('drawend', (event) => {
+      sketchListener?.()
+      sketchListener = null
+
+      const geom = event.feature.getGeometry() as LineString
+      updateOverlays(geom)
+
+      // Make all tooltips static (non-sketch)
+      for (const overlay of measureOverlays.current) {
+        const el = overlay.getElement()
+        if (el) el.classList.add('measure-tooltip-static')
+      }
+
+      mapInstance.current?.removeInteraction(draw)
+      measureInteraction.current = null
+      setIsMeasuring(false)
+    })
+
+    mapInstance.current.addInteraction(draw)
+    measureInteraction.current = draw
+    setIsMeasuring(true)
+  }, [clearMeasure])
+
   return (
     <>
       <div className="draw-controls">
@@ -536,7 +684,16 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
         <SearchControls searchMode={searchMode} />
       </div>
 
-      <div className="map-settings" ref={settingsRef}>
+      <div className="map-tools" ref={settingsRef}>
+        <button
+          type="button"
+          className={`btn-icon ${isMeasuring ? 'btn-icon-active' : ''}`}
+          aria-label="Mål avstand"
+          title="Mål avstand"
+          onClick={isMeasuring ? clearMeasure : startMeasuring}
+        >
+          <Ruler size={20} aria-hidden="true" />
+        </button>
         <button type="button" className="btn-icon" aria-label="Innstillinger" title="Innstillinger" onClick={() => setSettingsOpen((prev) => !prev)}>
           <Settings size={20} aria-hidden="true" />
         </button>
