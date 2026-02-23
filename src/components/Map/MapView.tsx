@@ -297,7 +297,12 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
       }),
     })
 
-    map.addControl(new ScaleLine({ units: 'metric' }))
+    map.addControl(new ScaleLine({
+      units: 'metric',
+      bar: true,
+      text: true,
+      minWidth: 140,
+    }))
 
     const select = new Select({
       condition: click,
