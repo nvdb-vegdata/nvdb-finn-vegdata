@@ -64,7 +64,7 @@ pipeline {
                 withCredentials([string(credentialsId: params.refreshToken, variable: 'REFRESH_TOKEN')]) {
                     script {
                         env.ATLAS_CLIENT_REFRESH_TOKEN = "${REFRESH_TOKEN}"
-                        sh "ac build nvdb-finn-vegdata -i ${IKT_LOSNING} -v ${VERSION} -b httpd24 -U https://artrepo.vegvesen.no/artifactory/webcontent-release-local/no/vegvesen/vt/nvdb/nvdb-finn-vegdata/finn-vegdata-${VERSION}.tar.gz --non-interactive --allow-update --block-until-finished --responsible-user ${env.ATLAS_RESPONSIBLE_USER}"
+                        sh "ac build nvdb-finn-vegdata -i ${IKT_LOSNING} -v ${VERSION} -b httpd24 -U https://artrepo.vegvesen.no/artifactory/webcontent-release-local/no/vegvesen/vt/nvdb/nvdb-finn-vegdata/nvdb-finn-vegdata-${VERSION}.tar.gz --non-interactive --allow-update --block-until-finished --responsible-user ${env.ATLAS_RESPONSIBLE_USER}"
                     }
                 }
             }
