@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "v1",
+  "type": "Deployment",
+  "spec": {
+    "name": "nvdb-finn-vegdata",
+    "replicas": 2,
+    "route": {
+      "type": "Route",
+      "spec": {
+        "hostname": "finn-vegdata.atlas.vegvesen.no",
+        "termination": "edge",
+        "expose": "external"
+      }
+    },
+    "image": {
+      "type": "ImageReferenceDescriptor",
+      "spec": {
+        "tag": "N/A"
+      }
+    },
+    "config": {
+      "type": "EnvironmentConfig",
+      "spec": {
+        "BASE_URL": "finn-vegdata.atlas.vegvesen.no",
+        "LES_API_URL": "https://nvdbapiles.atlas.vegvesen.no"
+      }
+    }
+  }
+}

@@ -5,7 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "bun --hot ./server.ts",
-    "build": "bun build ./index.html --outdir ./dist",
+    "build": "bun build ./index.html --outdir ./dist && mkdir -p ./dist/health && echo running > ./dist/health/alive",
+    "package": "cd dist && tar czvf ../dist.tar.gz *",
+    "publish": "./publish-to-artrepo.sh",
     "fetch:specs": "bun run fetch:datakatalog && bun run fetch:uberiket",
     "fetch:datakatalog": "curl -sS -H 'X-Client: nvdb-finn-vegdata' 'https://nvdbapiles.atlas.vegvesen.no/api-docs/datakatalog' -o specs/datakatalog.json",
     "fetch:uberiket": "curl -sS -H 'X-Client: nvdb-finn-vegdata' 'https://nvdbapiles.atlas.vegvesen.no/api-docs/uberiket' -o specs/uberiket.json",
