@@ -81,7 +81,8 @@ pipeline {
                 withCredentials([string(credentialsId: params.refreshToken, variable: 'REFRESH_TOKEN')]) {
                     script {
                         env.ATLAS_CLIENT_REFRESH_TOKEN = "${REFRESH_TOKEN}"
-                        sh "ac perform rolling deploy nvdb-finn-vegdata -i ${IKT_LOSNING} -v ${VERSION} -e utv-1 --responsible-user ${env.ATLAS_RESPONSIBLE_USER}"
+                        sh "pwd"
+                        sh "ac deploy nvdb-finn-vegdata -i ${IKT_LOSNING} -v ${VERSION} -e utv-1 --responsible-user ${env.ATLAS_RESPONSIBLE_USER}"
                     }
                 }
             }
