@@ -82,7 +82,7 @@ pipeline {
                     script {
                         env.ATLAS_CLIENT_REFRESH_TOKEN = "${REFRESH_TOKEN}"
                         sh "pwd"
-                        sh "ac deploy nvdb-finn-vegdata -i ${IKT_LOSNING} -v ${VERSION} -e utv-1 --responsible-user ${env.ATLAS_RESPONSIBLE_USER}"
+                        sh "ac deploy nvdb-finn-vegdata -i ${IKT_LOSNING} -e utv-1 --responsible-user ${env.ATLAS_RESPONSIBLE_USER}"
                     }
                 }
             }
