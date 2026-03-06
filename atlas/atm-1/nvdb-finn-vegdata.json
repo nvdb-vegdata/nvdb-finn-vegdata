@@ -7,7 +7,7 @@
     "route": {
       "type": "Route",
       "spec": {
-        "hostname": "finn-vegdata.test.atlas.vegvesen.no",
+        "hostname": "finnvegdata.test.atlas.vegvesen.no",
         "termination": "edge",
         "expose": "internal"
       }
@@ -21,7 +21,7 @@
     "config": {
       "type": "EnvironmentConfig",
       "spec": {
-        "BASE_URL": "https://finn-vegdata.test.atlas.vegvesen.no",
+        "BASE_URL": "https://finnvegdata.test.atlas.vegvesen.no",
         "LES_API_URL": "https://nvdbapiles.test.atlas.vegvesen.no"
       }
     }
