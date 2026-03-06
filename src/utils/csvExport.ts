@@ -104,7 +104,7 @@ export function downloadCsvPerType(vegobjekterByType: Map<number, Vegobjekt[]>, 
     if (!objects?.length) continue
 
     const csv = generateCsvForType(type, objects)
-    const typeName = (type.navn ?? `type_${type.id}`).replace(/[/\\?%*:|"<>]/g, '_')
+    const typeName = (type.navn ?? `type_${type.id}`).normalize('NFC').replace(/[/\\?%*:|"<>]/g, '_')
     files.push({ filename: `${typeName}.csv`, content: csv })
   }
 
@@ -223,10 +223,21 @@ function createZipBlob(files: { filename: string; content: string }[]): Blob {
     const checksum = crc32(dataBytes)
     const size = dataBytes.length
 
+    // Info-ZIP Unicode Path Extra Field (0x7075) for broad tool compatibility.
+    // Stores the UTF-8 filename explicitly so tools that ignore bit 11 still read it correctly.
+    const filenameCrc = crc32(filenameBytes)
+    const unicodePathExtra = concatBytes([
+      uint16LE(0x7075), // Header ID: "up"
+      uint16LE(5 + filenameBytes.length), // Data size: version(1) + crc(4) + name
+      new Uint8Array([0x01]), // Version
+      uint32LE(filenameCrc), // CRC32 of the filename bytes in the filename field
+      filenameBytes, // UTF-8 filename
+    ])
+
     const localHeader = concatBytes([
       uint32LE(0x04034b50),
       uint16LE(20),
-      uint16LE(0),
+      uint16LE(0x0800), // Language Encoding Flag: filename is UTF-8
       uint16LE(0),
       uint16LE(dosTime),
       uint16LE(dosDate),
@@ -234,8 +245,9 @@ function createZipBlob(files: { filename: string; content: string }[]): Blob {
       uint32LE(size),
       uint32LE(size),
       uint16LE(filenameBytes.length),
-      uint16LE(0),
+      uint16LE(unicodePathExtra.length),
       filenameBytes,
+      unicodePathExtra,
     ])
     localParts.push(localHeader, dataBytes)
 
@@ -243,7 +255,7 @@ function createZipBlob(files: { filename: string; content: string }[]): Blob {
       uint32LE(0x02014b50),
       uint16LE(20),
       uint16LE(20),
-      uint16LE(0),
+      uint16LE(0x0800), // Language Encoding Flag: filename is UTF-8
       uint16LE(0),
       uint16LE(dosTime),
       uint16LE(dosDate),
@@ -251,13 +263,14 @@ function createZipBlob(files: { filename: string; content: string }[]): Blob {
       uint32LE(size),
       uint32LE(size),
       uint16LE(filenameBytes.length),
-      uint16LE(0),
+      uint16LE(unicodePathExtra.length),
       uint16LE(0),
       uint16LE(0),
       uint16LE(0),
       uint32LE(0),
       uint32LE(localOffset),
       filenameBytes,
+      unicodePathExtra,
     ])
     centralParts.push(centralHeader)
 
