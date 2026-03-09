@@ -290,8 +290,8 @@ A "Last ned CSV" button in the vegobjekt list header opens a popover (CSS anchor
 When the user clicks a download option and there are unfetched pages remaining (`hasNextPage`), the app automatically fetches remaining pages (up to 10,000 objects) before generating the CSV. The button text changes to "Henter alle..." and is disabled during the fetch. Once fetching completes, the CSV is generated with the loaded data and downloaded. If all data is already loaded, the download happens immediately.
 
 ### Download Options
-1. **Alle typer i én fil** — Downloads a single `vegobjekter.csv` containing all vegobjekter across all types. Headers: `TypeID`, `TypeNavn`, `ID`, `Versjon`, `Startdato`, `Sluttdato`, `Stedfesting`. No egenskaper columns.
-2. **Fil per type (ZIP)** — Downloads a single `vegobjekter-per-type.zip` containing one CSV file per vegobjekttype (e.g., `Skiltplate.csv`). Each file includes common columns (`ID`, `Versjon`, `Startdato`, `Sluttdato`, `Stedfesting`) plus one dynamic column per unique egenskap name for that type. Geometry properties (GeometriEgenskap) are excluded.
+1. **Alle typer i én fil** — Downloads a single `vegobjekter.csv` containing a summary section at the top (TypeID, TypeNavn, Antall per type), followed by a blank line, then all vegobjekter across all types. Data headers: `TypeID`, `TypeNavn`, `ID`, `Versjon`, `Startdato`, `Sluttdato`, `Stedfesting`. No egenskaper columns.
+2. **Fil per type (ZIP)** — Downloads a single `vegobjekter-per-type.zip` containing `sammendrag.csv` (TypeID, TypeNavn, Antall per type) plus one CSV file per vegobjekttype (e.g., `Skiltplate.csv`). Each type file includes common columns (`ID`, `Versjon`, `Startdato`, `Sluttdato`, `Stedfesting`) plus one dynamic column per unique egenskap name for that type. Geometry properties (GeometriEgenskap) are excluded.
 
 ## Future Enhancements (Out of Scope)
 

@@ -96,8 +96,22 @@ function generateCsvForType(type: Vegobjekttype, objects: Vegobjekt[]): string {
   return csvRows.join('\n')
 }
 
+function generateSummaryCsv(vegobjekterByType: Map<number, Vegobjekt[]>, selectedTypes: Vegobjekttype[]): string {
+  const headers = ['TypeID', 'TypeNavn', 'Antall']
+  const rows = [headers.map(escapeCsvValue).join(',')]
+
+  for (const type of selectedTypes) {
+    const count = vegobjekterByType.get(type.id)?.length ?? 0
+    rows.push([String(type.id), type.navn ?? `type_${type.id}`, String(count)].map(escapeCsvValue).join(','))
+  }
+
+  return rows.join('\n')
+}
+
 export function downloadCsvPerType(vegobjekterByType: Map<number, Vegobjekt[]>, selectedTypes: Vegobjekttype[]): void {
   const files: { filename: string; content: string }[] = []
+
+  files.push({ filename: 'sammendrag.csv', content: generateSummaryCsv(vegobjekterByType, selectedTypes) })
 
   for (const type of selectedTypes) {
     const objects = vegobjekterByType.get(type.id)
@@ -108,7 +122,7 @@ export function downloadCsvPerType(vegobjekterByType: Map<number, Vegobjekt[]>, 
     files.push({ filename: `${typeName}.csv`, content: csv })
   }
 
-  if (files.length === 0) {
+  if (files.length <= 1) {
     return
   }
 
@@ -117,8 +131,10 @@ export function downloadCsvPerType(vegobjekterByType: Map<number, Vegobjekt[]>, 
 }
 
 export function downloadCsvAllTypes(vegobjekterByType: Map<number, Vegobjekt[]>, selectedTypes: Vegobjekttype[]): void {
+  const summarySection = generateSummaryCsv(vegobjekterByType, selectedTypes)
+
   const headers = ['TypeID', 'TypeNavn', 'ID', 'Versjon', 'Startdato', 'Sluttdato', 'Stedfesting']
-  const csvRows = [headers.map(escapeCsvValue).join(',')]
+  const dataRows = [headers.map(escapeCsvValue).join(',')]
 
   for (const type of selectedTypes) {
     const objects = vegobjekterByType.get(type.id)
@@ -137,11 +153,11 @@ export function downloadCsvAllTypes(vegobjekterByType: Map<number, Vegobjekt[]>,
         obj.gyldighetsperiode?.sluttdato ?? '',
         stedfestinger.join('; '),
       ]
-      csvRows.push(values.map(escapeCsvValue).join(','))
+      dataRows.push(values.map(escapeCsvValue).join(','))
     }
   }
 
-  downloadCsv(csvRows.join('\n'), 'vegobjekter.csv')
+  downloadCsv(`${summarySection}\n\n${dataRows.join('\n')}`, 'vegobjekter.csv')
 }
 
 function downloadCsv(csvContent: string, filename: string): void {
