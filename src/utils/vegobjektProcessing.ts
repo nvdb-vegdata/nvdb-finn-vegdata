@@ -18,7 +18,7 @@ export function getEgenskapValue(egenskap: EgenskapVerdi, egenskapstype: Egenska
   if (egenskap.type === 'EnumEgenskap' && egenskapstype) {
     const enumVerdi = getEnumVerdiById(egenskapstype, (egenskap as EnumEgenskap).verdi)
     if (enumVerdi) {
-      return enumVerdi.kortnavn ?? String(enumVerdi.verdi) ?? `ID: ${enumVerdi.id}`
+      return enumVerdi.verdi != null ? String(enumVerdi.verdi) : (enumVerdi.kortnavn ?? `ID: ${enumVerdi.id}`)
     }
   }
   return getEgenskapDisplayValue(egenskap)

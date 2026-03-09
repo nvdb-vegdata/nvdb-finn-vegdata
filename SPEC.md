@@ -276,7 +276,7 @@ interface VegobjektDisplay {
 - Full datakatalog is fetched once on load with `inkluder=alle`
 - Vegobjekttype lookup is synchronous via cached Map (`getVegobjekttypeById()`)
 - Map egenskap ID to name using `egenskapstyper[].id` -> `egenskapstyper[].navn`
-- For enum types, map value ID to display value using `tillatte_verdier[].id` -> `tillatte_verdier[].kortnavn`
+- For enum types, map value ID to display value using `tillatte_verdier[].id` -> `tillatte_verdier[].verdi` (full name), falling back to `kortnavn` if `verdi` is absent
 
 ## Overlap Check
 To determine if a vegobjekt is on a specific veglenke:
