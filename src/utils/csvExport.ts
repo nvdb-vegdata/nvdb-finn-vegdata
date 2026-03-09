@@ -102,6 +102,7 @@ function generateSummaryCsv(vegobjekterByType: Map<number, Vegobjekt[]>, selecte
 
   for (const type of selectedTypes) {
     const count = vegobjekterByType.get(type.id)?.length ?? 0
+    if (count === 0) continue
     rows.push([String(type.id), type.navn ?? `type_${type.id}`, String(count)].map(escapeCsvValue).join(','))
   }
 
