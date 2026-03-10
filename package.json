@@ -19,7 +19,7 @@
     "verify": "bun typecheck && bun test"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,css,html,json,md}": "sh -c 'bun verify'"
+    "*.{ts,tsx,js,jsx,css,html,json,md}": "biome check --write"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.13",

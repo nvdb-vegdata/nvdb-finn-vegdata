@@ -2,7 +2,7 @@ import { useAtom } from 'jotai'
 import { ChevronDown, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { getKategorier, getVegobjekttyper, isSelectableVegobjekttype, type Kategori, type Vegobjekttype } from '../../api/datakatalogClient'
-import { allTypesSelectedAtom, selectedTypesAtom, veglenkesekvensLimitAtom } from '../../state/atoms'
+import { allTypesSelectedAtom, selectedTypesAtom, VEGLENKESEKVENSER_LIMIT_OPTIONS, veglenkesekvensLimitAtom } from '../../state/atoms'
 
 export default function ObjectTypeSelector() {
   const [veglenkesekvensLimit, setVeglenkesekvensLimit] = useAtom(veglenkesekvensLimitAtom)
@@ -124,11 +124,11 @@ export default function ObjectTypeSelector() {
         <div className="limit-inline">
           <label htmlFor="veglenke-limit">Maks veglenkesekvenser</label>
           <select id="veglenke-limit" className="limit-select" value={veglenkesekvensLimit} onChange={(e) => setVeglenkesekvensLimit(Number(e.target.value))}>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-            <option value={200}>200</option>
+            {VEGLENKESEKVENSER_LIMIT_OPTIONS.map((limitOption) => (
+              <option key={limitOption} value={limitOption}>
+                {limitOption}
+              </option>
+            ))}
           </select>
         </div>
       </div>

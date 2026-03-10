@@ -9,7 +9,9 @@ import { ensureProjections } from '../utils/projections'
 
 ensureProjections()
 
-export const DEFAULT_VEGLENKESEKVENSER_LIMIT = 100
+export const DEFAULT_VEGLENKESEKVENSER_LIMIT = 500
+
+export const VEGLENKESEKVENSER_LIMIT_OPTIONS = [10, 20, 50, 100, 200, 500, 1000] as const
 
 export const DEFAULT_VEGLENKE_COLOR = 'rgb(0,110,184)'
 
@@ -118,7 +120,7 @@ function getInitialVeglenkesekvensLimit(): number {
   if (!limitParam) return DEFAULT_VEGLENKESEKVENSER_LIMIT
   const parsedLimit = Number(limitParam)
   if (!Number.isFinite(parsedLimit)) return DEFAULT_VEGLENKESEKVENSER_LIMIT
-  const allowedLimits = new Set([10, 20, 50, 100])
+  const allowedLimits = new Set<number>(VEGLENKESEKVENSER_LIMIT_OPTIONS)
   return allowedLimits.has(parsedLimit) ? parsedLimit : DEFAULT_VEGLENKESEKVENSER_LIMIT
 }
 
