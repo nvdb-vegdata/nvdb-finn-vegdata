@@ -9,7 +9,7 @@
       "spec": {
         "hostname": "finnvegdata.test.atlas.vegvesen.no",
         "termination": "edge",
-        "expose": "internal"
+        "expose": "external"
       }
     },
     "image": {
