@@ -17,11 +17,11 @@ alwaysApply: false
 - Use Uberiket API for vegobjekt data: `https://nvdbapiles.atlas.vegvesen.no/uberiket/api/v1`
 - Include `X-Client: nvdb-finn-vegdata` when calling NVDB APIs.
 
-## Formatting and Quality
+## Verification
 
-- Before commit, run:
+- After changes, run:
   - `bun run typecheck`
-  - `bun run lint`
+  - `bun test`
 
 ## Generated Code
 

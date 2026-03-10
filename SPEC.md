@@ -18,7 +18,7 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
 4. **Define Area/Route** - Draw a small polygon or paste a polygon WKT and click "Søk"/"Kopier WKT", enter a vegsystemreferanse (e.g., "FV6666 S1"), or provide stedfesting (e.g., "0.2-0.5@1234")
 5. **Fetch Veglenker** - Query veglenkesekvenser by polygon, vegsystemreferanse, or stedfesting IDs (configurable limit, default 100)
 6. **Visualize Veglenker** - Display veglenker on map (only those with geometry overlapping polygon). Polygon clipping is enabled by default, fading the full veglenke and overlaying only the portion inside the polygon.
-7. **Fetch Vegobjekter** - Fetch vegobjekter for all selected types in one request using comma-separated type IDs and a stedfesting filter, or use vegsystemreferanse when searching by strekning. Stedfesting mode uses the provided stedfesting filter directly. If polygon clipping is enabled, the stedfesting filter is built from only the overlapping polygon portions of each veglenke. `dato` is always sent in the vegobjekt query (selected date when enabled, otherwise today's date). If `metadata.neste` is present, fetch subsequent pages using the `start` token. The "Hent flere" button loads additional pages in batches of up to 10,000 objects per click.
+7. **Fetch Vegobjekter** - In polygon mode and strekning mode, fetch vegobjekter for all selected types directly from `GET /api/v1/vegobjekter/stream` using the drawn polygon or vegsystemreferanse and parse the NDJSON response incrementally. While the stream is active, the UI shows how many vegobjekter have been fetched so far. If the stream reaches the request limit of 10,000 objects, show a warning suggesting a smaller area or narrower strekning to fetch all results. If the stream times out after some vegobjekter have already arrived, keep the partial results and show a warning that the result set is incomplete. Stedfesting mode uses the provided stedfesting filter directly against the paged endpoint. `dato` is always sent in the vegobjekt query (selected date when enabled, otherwise today's date). If `metadata.neste` is present on paged responses, fetch subsequent pages using the `start` token. The "Hent flere" button loads additional pages in batches of up to 10,000 objects per click.
 8. **Inspect** - View detailed vegobjekt information in a collapsible list
 
 ## Key Concepts
@@ -88,6 +88,7 @@ The UI uses a small set of global CSS tokens (in `src/index.css` under `:root`) 
 - "Uberiket" means "unenriched" - no geometry on vegobjekter
 - Geometry comes from the veglenker (road network)
 - Must query veglenkesekvenser separately to get geometry
+- Use `polygon` on the stream endpoint to find vegobjekter inside a drawn area
 - Use `stedfesting` filter to find vegobjekter on specific veglenker
 
 ## Technical Stack
@@ -144,7 +145,8 @@ The UI uses a small set of global CSS tokens (in `src/index.css` under `:root`) 
 | Endpoint | Purpose |
 |----------|---------|
 | `GET /api/v1/vegnett/veglenkesekvenser` | Query road segments by polygon |
-| `GET /api/v1/vegobjekter?typeIder=...` | Query road objects by type IDs with stedfesting/vegsystemreferanse (always includes `dato`) |
+| `GET /api/v1/vegobjekter/stream?typeIder=...` | Stream road objects by type IDs with polygon/stedfesting/vegsystemreferanse as NDJSON (always includes `dato`) |
+| `GET /api/v1/vegobjekter?typeIder=...` | Query road objects by type IDs with stedfesting/vegsystemreferanse when paged results are needed |
 
 Query parameters:
 - `polygon`: UTM33 polygon coordinates
@@ -162,7 +164,7 @@ Each veglenke has a position range within its veglenkesekvens:
 - Veglenke has `startport` and `sluttport` (port numbers)
 - Position range is calculated by looking up the port positions: find porter where `nummer` matches `startport`/`sluttport`, then use their `posisjon` values
 
-When querying vegobjekter, only the veglenker that geometrically overlap with the drawn polygon are included. The stedfesting filter uses the exact position ranges of these overlapping veglenker (e.g., `0.2-0.4@123,0.6-0.8@456`). If polygon clipping is enabled, the position ranges are trimmed to the polygon intersection instead of using the full veglenke range.
+When querying vegobjekter in polygon mode, the app sends the drawn polygon directly to the Uberiket stream endpoint and parses the NDJSON response. Polygon clipping still affects how veglenker are rendered on the map, but it no longer changes the vegobjekt fetch filter.
 
 ## User Flow
 
@@ -199,7 +201,7 @@ When querying vegobjekter, only the veglenker that geometrically overlap with th
    - Veglenker with geometry overlapping polygon are rendered on map
    - Veglenker are filtered client-side by gyldighetsperiode for the active reference date (`startdato` inclusive, `sluttdato` exclusive)
    - Stedfesting mode renders full veglenker in a lighter style and overlays clipped stedfesting geometry
-   - Queries vegobjekter with stedfesting filter for polygon mode, direct stedfesting filter for stedfesting mode, or vegsystemreferanse for strekning mode
+   - Queries vegobjekter with the stream endpoint for polygon mode and strekning mode, or direct stedfesting filter for stedfesting mode
    - Includes `dato` in vegobjekt query (selected date when enabled, otherwise today's date)
 
 7. **Inspect Vegobjekter**

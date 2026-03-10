@@ -14,9 +14,27 @@ interface Props {
   onFetchNextPage: () => void
   fetchAllPages: () => Promise<void>
   isFetchingAll: boolean
+  isStreaming?: boolean
+  streamingFetchedCount?: number
+  streamWarning?: string | null
+  resultLimitReached?: boolean
+  resultLimitMessage?: string | null
 }
 
-export default function VegobjektList({ vegobjekterByType, isLoading, hasNextPage, isFetchingNextPage, onFetchNextPage, fetchAllPages, isFetchingAll }: Props) {
+export default function VegobjektList({
+  vegobjekterByType,
+  isLoading,
+  hasNextPage,
+  isFetchingNextPage,
+  onFetchNextPage,
+  fetchAllPages,
+  isFetchingAll,
+  isStreaming = false,
+  streamingFetchedCount = 0,
+  streamWarning = null,
+  resultLimitReached = false,
+  resultLimitMessage = null,
+}: Props) {
   const selectedTypes = useAtomValue(selectedTypesAtom)
   const focusedVegobjekt = useAtomValue(focusedVegobjektAtom)
   const errorMessage = useAtomValue(vegobjekterErrorAtom)
@@ -109,7 +127,16 @@ export default function VegobjektList({ vegobjekterByType, isLoading, hasNextPag
       <div className="vegobjekt-list-header">
         <div className="vegobjekt-list-heading">
           <span className="vegobjekt-list-title">Vegobjekter</span>
-          {isLoading ? null : <span className="vegobjekt-list-count">{totalCount} totalt</span>}
+          {isLoading ? (
+            isStreaming && streamingFetchedCount > 0 ? (
+              <span className="vegobjekt-list-count">{streamingFetchedCount} hentet så langt</span>
+            ) : null
+          ) : (
+            <span className="vegobjekt-list-count">
+              {totalCount} totalt
+              {resultLimitReached ? ' • maksgrense nådd' : ''}
+            </span>
+          )}
         </div>
         <div className="vegobjekt-list-actions">
           {hasNextPage && !isLoading && (
@@ -135,6 +162,10 @@ export default function VegobjektList({ vegobjekterByType, isLoading, hasNextPag
         </div>
       </div>
       <div className="vegobjekt-list-content">
+        {streamWarning && !isLoading && <div className="vegobjekt-list-empty vegobjekt-list-warning">{streamWarning}</div>}
+        {resultLimitReached && !isLoading && (
+          <div className="vegobjekt-list-empty vegobjekt-list-warning">{resultLimitMessage ?? 'Resultatet traff grensen på 10 000 vegobjekter.'}</div>
+        )}
         {overallCount > 0 && !isLoading && (
           <div className="vegobjekt-list-toolbar">
             <div className="vegobjekt-list-toolbar-left">
@@ -169,7 +200,7 @@ export default function VegobjektList({ vegobjekterByType, isLoading, hasNextPag
         {isLoading ? (
           <div className="sidebar-loading">
             <span className="spinner spinner-small" />
-            <span>Henter vegobjekter...</span>
+            <span>{isStreaming && streamingFetchedCount > 0 ? `Henter vegobjekter... ${streamingFetchedCount} hentet så langt` : 'Henter vegobjekter...'}</span>
           </div>
         ) : errorMessage ? (
           <div className="vegobjekt-list-empty vegobjekt-list-warning">{errorMessage}</div>

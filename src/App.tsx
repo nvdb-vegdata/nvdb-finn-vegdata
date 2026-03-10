@@ -14,7 +14,6 @@ import { useVegobjekttyper } from './hooks/useVegobjekttyper'
 import {
   allTypesSelectedAtom,
   polygonAtom,
-  polygonClipAtom,
   searchDateAtom,
   searchDateEnabledAtom,
   searchModeAtom,
@@ -34,7 +33,6 @@ export default function App() {
   const [selectedTypes, setSelectedTypes] = useAtom(selectedTypesAtom)
   const allTypesSelected = useAtomValue(allTypesSelectedAtom)
   const polygon = useAtomValue(polygonAtom)
-  const polygonClip = useAtomValue(polygonClipAtom)
   const searchDateEnabled = useAtomValue(searchDateEnabledAtom)
   const searchDate = useAtomValue(searchDateAtom)
   const veglenkesekvensLimit = useAtomValue(veglenkesekvensLimitAtom)
@@ -84,12 +82,15 @@ export default function App() {
     isFetchingNextPage: vegobjekterFetchingNextPage,
     fetchAllPages: fetchAllVegobjekterPages,
     isFetchingAll: vegobjekterFetchingAll,
+    isStreaming: vegobjekterStreaming,
+    streamingFetchedCount: vegobjekterStreamingFetchedCount,
+    streamWarning: vegobjekterStreamWarning,
+    resultLimitReached: vegobjekterResultLimitReached,
+    resultLimitMessage: vegobjekterResultLimitMessage,
   } = useVegobjekter({
     selectedTypes,
     allTypesSelected,
-    veglenkesekvenser: veglenkeResult?.veglenkesekvenser,
-    polygon: searchMode === 'polygon' ? polygon : null,
-    polygonClip: searchMode === 'polygon' ? polygonClip : false,
+    polygonUtm33: searchMode === 'polygon' ? polygonUtm33 : null,
     vegsystemreferanse: searchMode === 'strekning' ? strekning : null,
     stedfestingFilterDirect: searchMode === 'stedfesting' ? (stedfestingParsed?.stedfestingFilter ?? null) : null,
     searchDate: searchDateEnabled ? searchDate : null,
@@ -131,6 +132,8 @@ export default function App() {
         <div className="status-bar">
           {datakatalogLoading ? (
             'Laster datakatalog...'
+          ) : vegobjekterStreaming ? (
+            `Streamer vegobjekter... ${vegobjekterStreamingFetchedCount} hentet`
           ) : isLoading ? (
             'Laster data...'
           ) : (
@@ -191,6 +194,11 @@ export default function App() {
             }}
             fetchAllPages={fetchAllVegobjekterPages}
             isFetchingAll={vegobjekterFetchingAll}
+            isStreaming={vegobjekterStreaming}
+            streamingFetchedCount={vegobjekterStreamingFetchedCount}
+            streamWarning={vegobjekterStreamWarning}
+            resultLimitReached={vegobjekterResultLimitReached}
+            resultLimitMessage={vegobjekterResultLimitMessage}
           />
         )}
       </aside>

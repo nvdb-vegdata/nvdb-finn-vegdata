@@ -33,7 +33,7 @@
           {
             "name": "ider",
             "in": "query",
-            "description": "Hent kun vegobjekter med angitte IDer",
+            "description": "Hent kun vegobjekter med angitte IDer. Kan ikke kombineres med stedfesting, vegsystemreferanse eller polygon.",
             "required": false,
             "schema": { "type": "array", "items": { "type": "integer", "format": "int64" }, "uniqueItems": true }
           },
@@ -61,24 +61,38 @@
           {
             "name": "stedfesting",
             "in": "query",
-            "description": "Finn vegobjekter med stedfestinger som overlapper gitte utstrekninger (komma-separert liste).\n\nEksempel: 0-0.5@123,125,1.0@126\n",
+            "description": "Finn vegobjekter med stedfestinger som overlapper gitte utstrekninger (komma-separert liste).\n\nMERK:\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: 0-0.5@123,125,1.0@126\n",
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } }
           },
           {
             "name": "vegsystemreferanse",
             "in": "query",
-            "description": "Filtrer vegobjekter på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for KSP-veger.\n\nMERK:\n- Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.\n- Inkluderer både vegobjekter stedfestet på hovednivå (VT, VTKB) og detaljert nivå (KB, KF)\n\nEksempel: `EV6S1D1`",
+            "description": "Filtrer vegobjekter på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for KSP-veger.\n\nMERK:\n- Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.\n- Inkluderer både vegobjekter stedfestet på hovednivå (VT, VTKB) og detaljert nivå (KB, KF)\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: `EV6S1D1`",
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } }
+          },
+          {
+            "name": "polygon",
+            "in": "query",
+            "description": "Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.\n\nMERK:\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`",
+            "required": false,
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/VegobjekterSide" } } } }
         }
       }
@@ -100,7 +114,7 @@
           {
             "name": "ider",
             "in": "query",
-            "description": "Hent kun vegobjekter med angitte IDer",
+            "description": "Hent kun vegobjekter med angitte IDer. Kan ikke kombineres med stedfesting, vegsystemreferanse eller polygon.",
             "required": false,
             "schema": { "type": "array", "items": { "type": "integer", "format": "int64" }, "uniqueItems": true }
           },
@@ -128,24 +142,38 @@
           {
             "name": "stedfesting",
             "in": "query",
-            "description": "Finn vegobjekter med stedfestinger som overlapper gitte utstrekninger (komma-separert liste).\n\nEksempel: 0-0.5@123,125,1.0@126\n",
+            "description": "Finn vegobjekter med stedfestinger som overlapper gitte utstrekninger (komma-separert liste).\n\nMERK:\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: 0-0.5@123,125,1.0@126\n",
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } }
           },
           {
             "name": "vegsystemreferanse",
             "in": "query",
-            "description": "Filtrer vegobjekter på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for KSP-veger.\n\nMERK:\n- Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.\n- Inkluderer både vegobjekter stedfestet på hovednivå (VT, VTKB) og detaljert nivå (KB, KF)\n\nEksempel: `EV6S1D1`",
+            "description": "Filtrer vegobjekter på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for KSP-veger.\n\nMERK:\n- Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.\n- Inkluderer både vegobjekter stedfestet på hovednivå (VT, VTKB) og detaljert nivå (KB, KF)\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: `EV6S1D1`",
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } }
+          },
+          {
+            "name": "polygon",
+            "in": "query",
+            "description": "Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.\n\nMERK:\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`",
+            "required": false,
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/VegobjekterSide" } } } }
         }
       }
@@ -174,11 +202,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Vegobjekt" } } } }
         }
       }
@@ -201,11 +236,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Vegobjekt" } } } }
         }
       }
@@ -221,67 +263,32 @@
           { "name": "dato", "in": "query", "description": "Dato å hente vegobjekt fra", "required": true, "schema": { "type": "string", "format": "date" } }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Vegobjekt" } } } }
-        }
-      }
-    },
-    "/api/v1/vegobjekter/{typeId}/stream": {
-      "get": {
-        "tags": ["Vegobjekter"],
-        "summary": "Strøm aktive vegobjekter som NDJSON.",
-        "operationId": "hentVegobjekterStream",
-        "parameters": [
-          { "name": "typeId", "in": "path", "description": "Vegobjekttype ID", "required": true, "schema": { "type": "integer", "format": "int32" } },
-          {
-            "name": "start",
-            "in": "query",
-            "description": "Hent vegobjekter etterfølgende denne IDen",
-            "required": false,
-            "schema": { "type": "integer", "format": "int64" }
-          },
-          {
-            "name": "ider",
-            "in": "query",
-            "description": "Hent kun vegobjekter med angitte IDer",
-            "required": false,
-            "schema": { "type": "array", "items": { "type": "integer", "format": "int64" }, "uniqueItems": true }
-          },
-          {
-            "name": "antall",
-            "in": "query",
-            "description": "Antall vegobjekter som skal hentes. Fra 1 til 10000, standard 1000.",
-            "required": false,
-            "schema": { "type": "integer", "format": "int32" }
-          }
-        ],
-        "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "200": {
-            "description": "OK",
-            "content": { "application/x-ndjson": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Vegobjekt" } } } }
-          }
         }
       }
     },
     "/api/v1/vegobjekter/stream": {
       "get": {
         "tags": ["Vegobjekter"],
-        "summary": "Strøm vegobjekter fra flere typer som NDJSON.",
+        "summary": "Strøm et utvalg vegobjekter fra flere typer som NDJSON.",
         "operationId": "hentVegobjekterMultiTypeStream",
         "parameters": [
           {
             "name": "ider",
             "in": "query",
-            "description": "Hent kun vegobjekter med angitte IDer",
+            "description": "Hent kun vegobjekter med angitte IDer. Kan ikke kombineres med stedfesting, vegsystemreferanse eller polygon.",
             "required": false,
             "schema": { "type": "array", "items": { "type": "integer", "format": "int64" }, "uniqueItems": true }
           },
@@ -307,26 +314,47 @@
             "schema": { "type": "string", "format": "date" }
           },
           {
+            "name": "inkluder",
+            "in": "query",
+            "description": "Velg hvilke data som skal inkluderes i responsen",
+            "required": false,
+            "schema": { "type": "array", "items": { "$ref": "#/components/schemas/InkluderIVegobjekt" }, "uniqueItems": true }
+          },
+          {
             "name": "stedfesting",
             "in": "query",
-            "description": "Finn vegobjekter med stedfestinger som overlapper gitte utstrekninger (komma-separert liste).\n\nEksempel: 0-0.5@123,125,1.0@126\n",
+            "description": "Finn vegobjekter med stedfestinger som overlapper gitte utstrekninger (komma-separert liste).\n\nMERK:\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: 0-0.5@123,125,1.0@126\n",
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } }
           },
           {
             "name": "vegsystemreferanse",
             "in": "query",
-            "description": "Filtrer vegobjekter på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for KSP-veger.\n\nMERK:\n- Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.\n- Inkluderer både vegobjekter stedfestet på hovednivå (VT, VTKB) og detaljert nivå (KB, KF)\n\nEksempel: `EV6S1D1`",
+            "description": "Filtrer vegobjekter på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for KSP-veger.\n\nMERK:\n- Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.\n- Inkluderer både vegobjekter stedfestet på hovednivå (VT, VTKB) og detaljert nivå (KB, KF)\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: `EV6S1D1`",
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } }
+          },
+          {
+            "name": "polygon",
+            "in": "query",
+            "description": "Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.\n\nMERK:\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`",
+            "required": false,
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": {
             "description": "OK",
             "content": { "application/x-ndjson": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Vegobjekt" } } } }
@@ -357,11 +385,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Vegobjekt" } } } }
         }
       }
@@ -382,7 +417,7 @@
           {
             "name": "ider",
             "in": "query",
-            "description": "Hent kun veglenkesekvenser med angitte IDer",
+            "description": "Hent kun veglenkesekvenser med angitte IDer. Kan ikke kombineres med vegsystemreferanse eller polygon.",
             "required": false,
             "schema": { "type": "array", "items": { "type": "integer", "format": "int64" }, "uniqueItems": true }
           },
@@ -396,14 +431,14 @@
           {
             "name": "vegsystemreferanse",
             "in": "query",
-            "description": "Filtrer veglenkesekvenser på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for KSP-veger.\n\nMERK:\n- Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.\n- Både historisk og detaljert vegnett returneres.\n\nEksempel: `EV6S1D1`",
+            "description": "Filtrer veglenkesekvenser på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for KSP-veger.\n\nMERK:\n- Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.\n- Både historisk og detaljert vegnett returneres.\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: `EV6S1D1`",
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } }
           },
           {
             "name": "polygon",
             "in": "query",
-            "description": "Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.\n\nEksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`",
+            "description": "Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.\n\nMERK:\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`",
             "required": false,
             "schema": { "type": "string" }
           },
@@ -416,11 +451,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/VeglenkesekvenserSide" } } } }
         }
       }
@@ -440,11 +482,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Veglenkesekvens" } } } }
         }
       }
@@ -471,11 +520,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Veglenkesekvens" } } } }
         }
       }
@@ -489,21 +545,21 @@
           {
             "name": "ider",
             "in": "query",
-            "description": "Hent kun veglenkesekvenser med angitte IDer",
+            "description": "Hent kun veglenkesekvenser med angitte IDer. Kan ikke kombineres med vegsystemreferanse eller polygon.",
             "required": false,
             "schema": { "type": "array", "items": { "type": "integer", "format": "int64" }, "uniqueItems": true }
           },
           {
             "name": "polygon",
             "in": "query",
-            "description": "Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.\n\nEksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`",
+            "description": "Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.\n\nMERK:\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`",
             "required": false,
             "schema": { "type": "string" }
           },
           {
             "name": "vegsystemreferanse",
             "in": "query",
-            "description": "Filtrer veglenkesekvenser på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for KSP-veger.\n\nMERK:\n- Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.\n- Både historisk og detaljert vegnett returneres.\n\nEksempel: `EV6S1D1`",
+            "description": "Filtrer veglenkesekvenser på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for KSP-veger.\n\nMERK:\n- Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.\n- Både historisk og detaljert vegnett returneres.\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: `EV6S1D1`",
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } }
           },
@@ -516,11 +572,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": {
             "description": "OK",
             "content": { "application/x-ndjson": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Veglenkesekvens" } } } }
@@ -557,11 +620,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": {
             "description": "OK",
             "content": { "application/x-ndjson": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/VeglenkeMedId" } } } }
@@ -585,7 +655,7 @@
           {
             "name": "ider",
             "in": "query",
-            "description": "Hent kun noder med angitte IDer",
+            "description": "Hent kun noder med angitte IDer. Kan ikke kombineres med vegsystemreferanse eller polygon.",
             "required": false,
             "schema": { "type": "array", "items": { "type": "integer", "format": "int64" }, "uniqueItems": true }
           },
@@ -599,24 +669,31 @@
           {
             "name": "polygon",
             "in": "query",
-            "description": "Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.\n\nEksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`",
+            "description": "Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.\n\nMERK:\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`",
             "required": false,
             "schema": { "type": "string" }
           },
           {
             "name": "vegsystemreferanse",
             "in": "query",
-            "description": "Filtrer noder på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for KSP-veger.\n\n\nMERK:\n- Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.\n- Noder på både historisk og detaljert vegnett returneres.\n\n\nEksempel: `EV6S1D1`",
+            "description": "Filtrer noder på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for KSP-veger.\n\nMERK:\n- Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.\n- Noder på både historisk og detaljert vegnett returneres.\n- Ulike filter kan ikke kombineres.\n- Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.\n\nEksempel: `EV6S1D1`",
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } }
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/NoderSide" } } } }
         }
       }
@@ -628,11 +705,18 @@
         "operationId": "hentNode",
         "parameters": [{ "name": "nodeId", "in": "path", "description": "ID for noden", "required": true, "schema": { "type": "integer", "format": "int64" } }],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Node" } } } }
         }
       }
@@ -694,11 +778,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/VegobjektHendelserSide" } } } }
         }
       }
@@ -754,11 +845,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/VegobjektHendelserSide" } } } }
         }
       }
@@ -793,11 +891,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": {
             "description": "OK",
             "content": { "application/x-ndjson": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/VegobjektHendelseResponse" } } } }
@@ -821,11 +926,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/VegobjektHendelseResponse" } } } }
         }
       }
@@ -852,11 +964,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": {
             "description": "OK",
             "content": { "*/*": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/VegobjektHendelseResponse" } } } }
@@ -914,11 +1033,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/VegnettHendelserSide" } } } }
         }
       }
@@ -938,11 +1064,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/VegnettHendelseResponse" } } } }
         }
       }
@@ -997,11 +1130,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/VegnettHendelserSide" } } } }
         }
       }
@@ -1035,11 +1175,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": {
             "description": "OK",
             "content": { "application/x-ndjson": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/VegnettHendelseResponse" } } } }
@@ -1062,11 +1209,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/VegnettHendelseResponse" } } } }
         }
       }
@@ -1121,11 +1275,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/VegnettHendelserSide" } } } }
         }
       }
@@ -1145,11 +1306,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/VegnettHendelseResponse" } } } }
         }
       }
@@ -1171,11 +1339,18 @@
           }
         ],
         "responses": {
-          "404": { "description": "Not Found", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "401": { "description": "Unauthorized", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "403": { "description": "Forbidden", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "400": { "description": "Bad Request", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
-          "500": { "description": "Internal Server Error", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "404": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "403": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "400": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } } },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetail" } } }
+          },
           "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/EndringssettHendelserSide" } } } }
         }
       }
@@ -1191,7 +1366,7 @@
           "status": { "type": "integer", "format": "int32" },
           "detail": { "type": "string" },
           "instance": { "type": "string", "format": "uri" },
-          "properties": { "type": "object", "additionalProperties": { "type": "object" } }
+          "properties": { "type": "object", "additionalProperties": {} }
         }
       },
       "InkluderIVegobjekt": { "type": "string", "enum": ["gyldighetsperiode", "egenskaper", "stedfesting", "barn", "alle", "minimum"] },
@@ -1211,7 +1386,6 @@
         "required": ["verdi"]
       },
       "EgenskapVerdi": {
-        "type": "object",
         "discriminator": {
           "propertyName": "type",
           "mapping": {
@@ -1250,8 +1424,6 @@
       "GeometriKvalitet": {
         "type": "object",
         "properties": {
-          "malemetode": { "type": "integer", "format": "int32" },
-          "malemetodeHoyde": { "type": "integer", "format": "int32" },
           "datafangstmetode": { "type": "string" },
           "datafangstmetodeHoyde": { "type": "string" },
           "noyaktighet": { "type": "integer", "format": "int32" },
@@ -1290,10 +1462,7 @@
         "required": ["verdi"]
       },
       "KortDatoEgenskap": {
-        "allOf": [
-          { "$ref": "#/components/schemas/EgenskapVerdi" },
-          { "type": "object", "properties": { "verdi": { "type": "string", "example": "--03-22" } } }
-        ],
+        "allOf": [{ "$ref": "#/components/schemas/EgenskapVerdi" }, { "type": "object", "properties": { "verdi": { "type": "string" } } }],
         "required": ["verdi"]
       },
       "ListeEgenskap": {
@@ -1323,7 +1492,6 @@
       },
       "Sideposisjon": { "type": "string", "enum": ["V", "H", "HV", "M", "K", "MV", "MH", "VT", "HT", "R0", "L"] },
       "Stedfesting": {
-        "type": "object",
         "discriminator": {
           "propertyName": "type",
           "mapping": {
@@ -1391,16 +1559,19 @@
         ],
         "required": ["id", "sluttpunkt", "startpunkt"]
       },
-      "StrukturEgenskap": { "allOf": [{ "$ref": "#/components/schemas/EgenskapVerdi" }] },
+      "StrukturEgenskap": {
+        "allOf": [
+          { "$ref": "#/components/schemas/EgenskapVerdi" },
+          { "type": "object", "properties": { "verdier": { "type": "object", "additionalProperties": {} } } }
+        ],
+        "required": ["verdier"]
+      },
       "TekstEgenskap": {
         "allOf": [{ "$ref": "#/components/schemas/EgenskapVerdi" }, { "type": "object", "properties": { "verdi": { "type": "string" } } }],
         "required": ["verdi"]
       },
       "TidEgenskap": {
-        "allOf": [
-          { "$ref": "#/components/schemas/EgenskapVerdi" },
-          { "type": "object", "properties": { "verdi": { "type": "string", "example": "14:30:00" } } }
-        ],
+        "allOf": [{ "$ref": "#/components/schemas/EgenskapVerdi" }, { "type": "object", "properties": { "verdi": { "type": "string" } } }],
         "required": ["verdi"]
       },
       "Vegobjekt": {
@@ -1623,7 +1794,6 @@
         "required": ["barnFjernet", "barnLagtTil"]
       },
       "RelasjonEndring": {
-        "type": "object",
         "discriminator": {
           "propertyName": "type",
           "mapping": {
@@ -1654,7 +1824,6 @@
       },
       "RelasjonFjernet": { "allOf": [{ "$ref": "#/components/schemas/RelasjonEndring" }] },
       "StedfestingEndring": {
-        "type": "object",
         "discriminator": {
           "propertyName": "type",
           "mapping": {
@@ -1715,7 +1884,6 @@
         "required": ["fjernet", "lagtTil"]
       },
       "VegobjektHendelse": {
-        "type": "object",
         "discriminator": {
           "propertyName": "type",
           "mapping": {
@@ -1960,7 +2128,6 @@
         "required": ["lastLengde", "lengde", "porter", "veglenker"]
       },
       "VegnettHendelse": {
-        "type": "object",
         "discriminator": {
           "propertyName": "type",
           "mapping": {
@@ -2008,18 +2175,6 @@
         "required": ["metadata", "vegnettHendelser", "vegobjektHendelser"]
       }
     },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "oauth2",
-        "name": "bearerAuth",
-        "flows": {
-          "authorizationCode": {
-            "authorizationUrl": "https://www.vegvesen.no:443/openam/oauth2/realms/root/realms/Employees/authorize",
-            "tokenUrl": "https://www.vegvesen.no:443/openam/oauth2/realms/root/realms/Employees/access_token",
-            "scopes": { "openid": "Open ID", "svvprofile": "SVV profile" }
-          }
-        }
-      }
-    }
+    "securitySchemes": { "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" } }
   }
 }

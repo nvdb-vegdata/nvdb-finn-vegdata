@@ -1,128 +1,76 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
-import WKT from 'ol/format/WKT'
-import type { LineString, Polygon } from 'ol/geom'
 import { useCallback, useMemo, useState } from 'react'
 import type { Vegobjekttype } from '../api/datakatalogClient'
 import { hentVegobjekterMultiType } from '../api/generated/uberiket/sdk.gen'
 import type { InkluderIVegobjekt } from '../api/generated/uberiket/types.gen'
-import { buildStedfestingFilter, type VeglenkeRange, type VeglenkesekvensMedPosisjoner, type Vegobjekt, VegobjekterRequestError } from '../api/uberiketClient'
-import { getTodayDate, isDateWithinGyldighetsperiode } from '../utils/dateUtils'
-import { getLineStringOverlapFractions } from '../utils/geometryUtils'
-
-function getOverlappingVeglenkeRanges(
-  veglenkesekvenser: VeglenkesekvensMedPosisjoner[],
-  polygon: Polygon,
-  polygonClip: boolean,
-  referenceDate: string,
-): VeglenkeRange[] {
-  const ranges: VeglenkeRange[] = []
-  const wktFormat = new WKT()
-  const polygonExtent = polygon.getExtent()
-
-  for (const vs of veglenkesekvenser) {
-    for (const vl of vs.veglenker) {
-      if (!isDateWithinGyldighetsperiode(referenceDate, vl.gyldighetsperiode)) {
-        continue
-      }
-
-      if (!vl.geometri?.wkt) continue
-
-      try {
-        const geom = wktFormat.readGeometry(vl.geometri.wkt, {
-          dataProjection: `EPSG:${vl.geometri.srid}`,
-          featureProjection: 'EPSG:25833',
-        })
-
-        if (!geom.intersectsExtent(polygonExtent)) {
-          continue
-        }
-
-        if (polygonClip && geom.getType() === 'LineString') {
-          const span = vl.sluttposisjon - vl.startposisjon
-          if (span <= 0) continue
-          const coords = (geom as LineString).getCoordinates()
-          const overlapFractions = getLineStringOverlapFractions(coords, polygon)
-          if (overlapFractions.length === 0) continue
-
-          for (const overlap of overlapFractions) {
-            const startposisjon = vl.startposisjon + span * overlap.startFraction
-            const sluttposisjon = vl.startposisjon + span * overlap.endFraction
-            if (sluttposisjon - startposisjon <= 0) continue
-            ranges.push({
-              veglenkesekvensId: vs.id,
-              startposisjon,
-              sluttposisjon,
-            })
-          }
-          continue
-        }
-
-        ranges.push({
-          veglenkesekvensId: vs.id,
-          startposisjon: vl.startposisjon,
-          sluttposisjon: vl.sluttposisjon,
-        })
-      } catch (e) {
-        console.warn('Failed to parse veglenke geometry', e)
-      }
-    }
-  }
-
-  return ranges
-}
+import { hentVegobjekterStream, VEGOBJEKTER_STREAM_LIMIT, type Vegobjekt, VegobjekterRequestError } from '../api/uberiketClient'
+import { getTodayDate } from '../utils/dateUtils'
 
 type VegobjekterParams = {
   selectedTypes: Vegobjekttype[]
   allTypesSelected: boolean
-  veglenkesekvenser: VeglenkesekvensMedPosisjoner[] | undefined
-  polygon: Polygon | null
-  polygonClip: boolean
+  polygonUtm33?: string | null
   vegsystemreferanse?: string | null
   stedfestingFilterDirect?: string | null
   searchDate?: string | null
 }
 
-export function useVegobjekter({
-  selectedTypes,
-  allTypesSelected,
-  veglenkesekvenser,
-  polygon,
-  polygonClip,
-  vegsystemreferanse,
-  stedfestingFilterDirect,
-  searchDate,
-}: VegobjekterParams) {
+type VegobjekterPage = {
+  vegobjekter: Vegobjekt[]
+  warning?: string | null
+  metadata?: {
+    neste?: {
+      start?: string
+    }
+  }
+}
+
+export function useVegobjekter({ selectedTypes, allTypesSelected, polygonUtm33, vegsystemreferanse, stedfestingFilterDirect, searchDate }: VegobjekterParams) {
+  const trimmedPolygon = polygonUtm33?.trim() ?? ''
   const trimmedStrekning = vegsystemreferanse?.trim() ?? ''
   const trimmedSearchDate = searchDate?.trim() ?? ''
   const today = getTodayDate()
   const referenceDate = trimmedSearchDate.length > 0 ? trimmedSearchDate : today
   const directFilter = stedfestingFilterDirect?.trim() ?? ''
-  const stedfestingFilter = useMemo(() => {
-    if (directFilter.length > 0) return directFilter
-    if (!veglenkesekvenser || !polygon || trimmedStrekning.length > 0) return ''
-    const ranges = getOverlappingVeglenkeRanges(veglenkesekvenser, polygon, polygonClip, referenceDate)
-    return buildStedfestingFilter(ranges)
-  }, [directFilter, polygonClip, referenceDate, veglenkesekvenser, polygon, trimmedStrekning])
-
-  const enabled = (allTypesSelected || selectedTypes.length > 0) && (trimmedStrekning.length > 0 || stedfestingFilter.length > 0)
+  const isPolygonSearch = trimmedPolygon.length > 0
+  const isStrekningSearch = trimmedStrekning.length > 0
+  const isStreamSearch = isPolygonSearch || isStrekningSearch
+  const enabled = (allTypesSelected || selectedTypes.length > 0) && (isStreamSearch || directFilter.length > 0)
   const typeIds = useMemo(() => selectedTypes.map((type) => type.id).sort((a, b) => a - b), [selectedTypes])
   const typeIdList = useMemo(() => typeIds.join(','), [typeIds])
 
-  const queryParams = useMemo(
+  const pagedQueryParams = useMemo(
     () => ({
       typeIder: allTypesSelected ? undefined : typeIds,
       antall: 1000,
       inkluder: ['alle'] as InkluderIVegobjekt[],
       dato: referenceDate,
-      vegsystemreferanse: trimmedStrekning.length > 0 ? [trimmedStrekning] : undefined,
-      stedfesting: trimmedStrekning.length > 0 ? undefined : [stedfestingFilter],
+      stedfesting: [directFilter],
     }),
-    [allTypesSelected, referenceDate, stedfestingFilter, trimmedStrekning, typeIds],
+    [allTypesSelected, directFilter, referenceDate, typeIds],
   )
 
-  const query = useInfiniteQuery({
+  const [streamingFetchedCount, setStreamingFetchedCount] = useState(0)
+  const [isStreaming, setIsStreaming] = useState(false)
+
+  const query = useInfiniteQuery<VegobjekterPage>({
     queryFn: async ({ pageParam, signal }) => {
       try {
+        if (isStreamSearch) {
+          setStreamingFetchedCount(0)
+          setIsStreaming(true)
+          const streamResult = await hentVegobjekterStream({
+            typeIds: allTypesSelected ? undefined : typeIds,
+            polygon: isPolygonSearch ? trimmedPolygon : undefined,
+            vegsystemreferanse: isStrekningSearch ? trimmedStrekning : undefined,
+            dato: referenceDate,
+            signal,
+            onProgress: setStreamingFetchedCount,
+          })
+
+          return streamResult
+        }
+
         let start: string | undefined
         if (typeof pageParam === 'string') {
           start = pageParam || undefined
@@ -131,7 +79,7 @@ export function useVegobjekter({
         }
         const { data } = await hentVegobjekterMultiType({
           query: {
-            ...queryParams,
+            ...pagedQueryParams,
             start,
           },
           signal,
@@ -149,12 +97,16 @@ export function useVegobjekter({
 
         const message = error instanceof Error ? error.message : String(error)
         throw new Error(message)
+      } finally {
+        if (isStreamSearch) {
+          setIsStreaming(false)
+        }
       }
     },
-    queryKey: ['vegobjekter', allTypesSelected ? 'all' : typeIdList, stedfestingFilter, trimmedStrekning, trimmedSearchDate || `today:${today}`],
+    queryKey: ['vegobjekter', allTypesSelected ? 'all' : typeIdList, trimmedPolygon, directFilter, trimmedStrekning, trimmedSearchDate || `today:${today}`],
     enabled,
     initialPageParam: '',
-    getNextPageParam: (lastPage) => lastPage.metadata.neste?.start,
+    getNextPageParam: (lastPage) => lastPage.metadata?.neste?.start,
   })
 
   const [isFetchingBatch, setIsFetchingBatch] = useState(false)
@@ -162,6 +114,7 @@ export function useVegobjekter({
 
   const fetchNextBatch = useCallback(
     async (setLoading: (v: boolean) => void) => {
+      if (isStreamSearch) return
       if (!query.hasNextPage) return
       setLoading(true)
 
@@ -184,7 +137,7 @@ export function useVegobjekter({
         setLoading(false)
       }
     },
-    [query.data, query.fetchNextPage, query.hasNextPage],
+    [isStreamSearch, query.data, query.fetchNextPage, query.hasNextPage],
   )
 
   const fetchMore = useCallback(async () => {
@@ -200,6 +153,7 @@ export function useVegobjekter({
   const vegobjekterByType = new Map<number, Vegobjekt[]>(selectedTypes.map((type) => [type.id, [] as Vegobjekt[]]))
 
   const allVegobjekter = query.data?.pages.flatMap((page) => page.vegobjekter) ?? []
+  const streamWarning = isStreamSearch ? (query.data?.pages[0]?.warning ?? null) : null
 
   for (const vegobjekt of allVegobjekter) {
     const list = vegobjekterByType.get(vegobjekt.typeId)
@@ -228,5 +182,14 @@ export function useVegobjekter({
     isFetchingNextPage: isFetchingBatch,
     fetchAllPages: fetchForCsv,
     isFetchingAll: isFetchingForCsv,
+    isStreaming,
+    streamingFetchedCount,
+    streamWarning,
+    resultLimitReached: isStreamSearch && allVegobjekter.length >= VEGOBJEKTER_STREAM_LIMIT,
+    resultLimitMessage: isPolygonSearch
+      ? 'Resultatet traff grensen på 10 000 vegobjekter. Tegn et mindre område for å hente alle.'
+      : isStrekningSearch
+        ? 'Resultatet traff grensen på 10 000 vegobjekter. Bruk en smalere strekning for å hente alle.'
+        : null,
   }
 }

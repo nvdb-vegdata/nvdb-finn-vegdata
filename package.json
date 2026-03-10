@@ -8,19 +8,27 @@
     "build": "bun build ./index.html --outdir ./dist && mkdir -p ./dist/health && echo running > ./dist/health/alive",
     "package": "cd dist && tar czvf ../dist.tar.gz *",
     "publish": "./publish-to-artrepo.sh",
+    "prepare": "husky",
     "fetch:specs": "bun run fetch:datakatalog && bun run fetch:uberiket",
     "fetch:datakatalog": "curl -sS -H 'X-Client: nvdb-finn-vegdata' 'https://nvdbapiles.atlas.vegvesen.no/api-docs/datakatalog' -o specs/datakatalog.json",
     "fetch:uberiket": "curl -sS -H 'X-Client: nvdb-finn-vegdata' 'https://nvdbapiles.atlas.vegvesen.no/api-docs/uberiket' -o specs/uberiket.json",
-    "generate:api": "bunx openapi-ts",
-    "typecheck": "bunx tsc --noEmit",
-    "lint": "biome check --write"
+    "generate:api": "openapi-ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check --write",
+    "test": "bun test",
+    "verify": "bun typecheck && bun test"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,css,html,json,md}": "sh -c 'bun verify'"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.13",
     "@hey-api/openapi-ts": "^0.92.3",
     "@types/bun": "latest",
     "@types/react": "^19.2.8",
-    "@types/react-dom": "^19.2.3"
+    "@types/react-dom": "^19.2.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.3"
   },
   "peerDependencies": {
     "typescript": "^5"

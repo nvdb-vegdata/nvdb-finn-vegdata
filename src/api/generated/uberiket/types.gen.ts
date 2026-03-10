@@ -11,9 +11,7 @@ export type ProblemDetail = {
     detail?: string;
     instance?: string;
     properties?: {
-        [key: string]: {
-            [key: string]: unknown;
-        };
+        [key: string]: unknown;
     };
 };
 
@@ -55,8 +53,6 @@ export type GeometriEgenskap = Omit<EgenskapVerdi, 'type'> & {
 };
 
 export type GeometriKvalitet = {
-    malemetode?: number;
-    malemetodeHoyde?: number;
     datafangstmetode?: string;
     datafangstmetodeHoyde?: string;
     noyaktighet?: number;
@@ -175,6 +171,9 @@ export type StedfestingSving = Omit<Stedfesting, 'type'> & {
 };
 
 export type StrukturEgenskap = Omit<EgenskapVerdi, 'type'> & {
+    verdier: {
+        [key: string]: unknown;
+    };
     type: 'StrukturEgenskap';
 };
 
@@ -638,7 +637,7 @@ export type HentVegobjekterMultiTypeData = {
          */
         antall?: number;
         /**
-         * Hent kun vegobjekter med angitte IDer
+         * Hent kun vegobjekter med angitte IDer. Kan ikke kombineres med stedfesting, vegsystemreferanse eller polygon.
          */
         ider?: Array<number>;
         /**
@@ -656,6 +655,10 @@ export type HentVegobjekterMultiTypeData = {
         /**
          * Finn vegobjekter med stedfestinger som overlapper gitte utstrekninger (komma-separert liste).
          *
+         * MERK:
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
+         *
          * Eksempel: 0-0.5@123,125,1.0@126
          *
          */
@@ -666,10 +669,22 @@ export type HentVegobjekterMultiTypeData = {
          * MERK:
          * - Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.
          * - Inkluderer både vegobjekter stedfestet på hovednivå (VT, VTKB) og detaljert nivå (KB, KF)
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
          *
          * Eksempel: `EV6S1D1`
          */
         vegsystemreferanse?: Array<string>;
+        /**
+         * Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.
+         *
+         * MERK:
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
+         *
+         * Eksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`
+         */
+        polygon?: string;
     };
     url: '/api/v1/vegobjekter';
 };
@@ -695,6 +710,10 @@ export type HentVegobjekterMultiTypeErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentVegobjekterMultiTypeError = HentVegobjekterMultiTypeErrors[keyof HentVegobjekterMultiTypeErrors];
@@ -722,7 +741,7 @@ export type HentVegobjekterData = {
          */
         antall?: number;
         /**
-         * Hent kun vegobjekter med angitte IDer
+         * Hent kun vegobjekter med angitte IDer. Kan ikke kombineres med stedfesting, vegsystemreferanse eller polygon.
          */
         ider?: Array<number>;
         /**
@@ -740,6 +759,10 @@ export type HentVegobjekterData = {
         /**
          * Finn vegobjekter med stedfestinger som overlapper gitte utstrekninger (komma-separert liste).
          *
+         * MERK:
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
+         *
          * Eksempel: 0-0.5@123,125,1.0@126
          *
          */
@@ -750,10 +773,22 @@ export type HentVegobjekterData = {
          * MERK:
          * - Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.
          * - Inkluderer både vegobjekter stedfestet på hovednivå (VT, VTKB) og detaljert nivå (KB, KF)
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
          *
          * Eksempel: `EV6S1D1`
          */
         vegsystemreferanse?: Array<string>;
+        /**
+         * Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.
+         *
+         * MERK:
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
+         *
+         * Eksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`
+         */
+        polygon?: string;
     };
     url: '/api/v1/vegobjekter/{typeId}';
 };
@@ -779,6 +814,10 @@ export type HentVegobjekterErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentVegobjekterError = HentVegobjekterErrors[keyof HentVegobjekterErrors];
@@ -838,6 +877,10 @@ export type HentVegobjektMedTypeErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentVegobjektMedTypeError = HentVegobjektMedTypeErrors[keyof HentVegobjektMedTypeErrors];
@@ -897,6 +940,10 @@ export type HentVegobjektVersjonErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentVegobjektVersjonError = HentVegobjektVersjonErrors[keyof HentVegobjektVersjonErrors];
@@ -952,6 +999,10 @@ export type HentVegobjektHistoriskErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentVegobjektHistoriskError = HentVegobjektHistoriskErrors[keyof HentVegobjektHistoriskErrors];
@@ -965,71 +1016,12 @@ export type HentVegobjektHistoriskResponses = {
 
 export type HentVegobjektHistoriskResponse = HentVegobjektHistoriskResponses[keyof HentVegobjektHistoriskResponses];
 
-export type HentVegobjekterStreamData = {
-    body?: never;
-    path: {
-        /**
-         * Vegobjekttype ID
-         */
-        typeId: number;
-    };
-    query?: {
-        /**
-         * Hent vegobjekter etterfølgende denne IDen
-         */
-        start?: number;
-        /**
-         * Hent kun vegobjekter med angitte IDer
-         */
-        ider?: Array<number>;
-        /**
-         * Antall vegobjekter som skal hentes. Fra 1 til 10000, standard 1000.
-         */
-        antall?: number;
-    };
-    url: '/api/v1/vegobjekter/{typeId}/stream';
-};
-
-export type HentVegobjekterStreamErrors = {
-    /**
-     * Bad Request
-     */
-    400: ProblemDetail;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetail;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetail;
-    /**
-     * Not Found
-     */
-    404: ProblemDetail;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetail;
-};
-
-export type HentVegobjekterStreamError = HentVegobjekterStreamErrors[keyof HentVegobjekterStreamErrors];
-
-export type HentVegobjekterStreamResponses = {
-    /**
-     * OK
-     */
-    200: Array<Vegobjekt>;
-};
-
-export type HentVegobjekterStreamResponse = HentVegobjekterStreamResponses[keyof HentVegobjekterStreamResponses];
-
 export type HentVegobjekterMultiTypeStreamData = {
     body?: never;
     path?: never;
     query?: {
         /**
-         * Hent kun vegobjekter med angitte IDer
+         * Hent kun vegobjekter med angitte IDer. Kan ikke kombineres med stedfesting, vegsystemreferanse eller polygon.
          */
         ider?: Array<number>;
         /**
@@ -1045,7 +1037,15 @@ export type HentVegobjekterMultiTypeStreamData = {
          */
         dato?: string;
         /**
+         * Velg hvilke data som skal inkluderes i responsen
+         */
+        inkluder?: Array<InkluderIVegobjekt>;
+        /**
          * Finn vegobjekter med stedfestinger som overlapper gitte utstrekninger (komma-separert liste).
+         *
+         * MERK:
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
          *
          * Eksempel: 0-0.5@123,125,1.0@126
          *
@@ -1057,10 +1057,22 @@ export type HentVegobjekterMultiTypeStreamData = {
          * MERK:
          * - Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.
          * - Inkluderer både vegobjekter stedfestet på hovednivå (VT, VTKB) og detaljert nivå (KB, KF)
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
          *
          * Eksempel: `EV6S1D1`
          */
         vegsystemreferanse?: Array<string>;
+        /**
+         * Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.
+         *
+         * MERK:
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
+         *
+         * Eksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`
+         */
+        polygon?: string;
     };
     url: '/api/v1/vegobjekter/stream';
 };
@@ -1086,6 +1098,10 @@ export type HentVegobjekterMultiTypeStreamErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentVegobjekterMultiTypeStreamError = HentVegobjekterMultiTypeStreamErrors[keyof HentVegobjekterMultiTypeStreamErrors];
@@ -1141,6 +1157,10 @@ export type HentVegobjektErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentVegobjektError = HentVegobjektErrors[keyof HentVegobjektErrors];
@@ -1163,7 +1183,7 @@ export type HentVeglenkesekvenserData = {
          */
         antall?: number;
         /**
-         * Hent kun veglenkesekvenser med angitte IDer
+         * Hent kun veglenkesekvenser med angitte IDer. Kan ikke kombineres med vegsystemreferanse eller polygon.
          */
         ider?: Array<number>;
         /**
@@ -1176,12 +1196,18 @@ export type HentVeglenkesekvenserData = {
          * MERK:
          * - Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.
          * - Både historisk og detaljert vegnett returneres.
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
          *
          * Eksempel: `EV6S1D1`
          */
         vegsystemreferanse?: Array<string>;
         /**
          * Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.
+         *
+         * MERK:
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
          *
          * Eksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`
          */
@@ -1215,6 +1241,10 @@ export type HentVeglenkesekvenserErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentVeglenkesekvenserError = HentVeglenkesekvenserErrors[keyof HentVeglenkesekvenserErrors];
@@ -1261,6 +1291,10 @@ export type HentVeglenkesekvensErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentVeglenkesekvensError = HentVeglenkesekvensErrors[keyof HentVeglenkesekvensErrors];
@@ -1312,6 +1346,10 @@ export type HentVeglenkesekvensHistoriskErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentVeglenkesekvensHistoriskError = HentVeglenkesekvensHistoriskErrors[keyof HentVeglenkesekvensHistoriskErrors];
@@ -1330,11 +1368,15 @@ export type StreamVeglenkesekvenserData = {
     path?: never;
     query?: {
         /**
-         * Hent kun veglenkesekvenser med angitte IDer
+         * Hent kun veglenkesekvenser med angitte IDer. Kan ikke kombineres med vegsystemreferanse eller polygon.
          */
         ider?: Array<number>;
         /**
          * Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.
+         *
+         * MERK:
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
          *
          * Eksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`
          */
@@ -1345,6 +1387,8 @@ export type StreamVeglenkesekvenserData = {
          * MERK:
          * - Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.
          * - Både historisk og detaljert vegnett returneres.
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
          *
          * Eksempel: `EV6S1D1`
          */
@@ -1378,6 +1422,10 @@ export type StreamVeglenkesekvenserErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type StreamVeglenkesekvenserError = StreamVeglenkesekvenserErrors[keyof StreamVeglenkesekvenserErrors];
@@ -1432,6 +1480,10 @@ export type StreamVeglenkerErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type StreamVeglenkerError = StreamVeglenkerErrors[keyof StreamVeglenkerErrors];
@@ -1454,7 +1506,7 @@ export type HentNoderData = {
          */
         antall?: number;
         /**
-         * Hent kun noder med angitte IDer
+         * Hent kun noder med angitte IDer. Kan ikke kombineres med vegsystemreferanse eller polygon.
          */
         ider?: Array<number>;
         /**
@@ -1464,17 +1516,21 @@ export type HentNoderData = {
         /**
          * Filtrer med polygon i UTM 33. Merk: Objekter opp til 1 m unna polygon kan bli med.
          *
+         * MERK:
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
+         *
          * Eksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`
          */
         polygon?: string;
         /**
          * Filtrer noder på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for KSP-veger.
          *
-         *
          * MERK:
          * - Meterverdier, trafikantgruppe, kryssystem og sideanlegg støttes ikke.
          * - Noder på både historisk og detaljert vegnett returneres.
-         *
+         * - Ulike filter kan ikke kombineres.
+         * - Gjelder kombinasjoner av `ider`, `stedfesting`, `vegsystemreferanse` og `polygon`.
          *
          * Eksempel: `EV6S1D1`
          */
@@ -1504,6 +1560,10 @@ export type HentNoderErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentNoderError = HentNoderErrors[keyof HentNoderErrors];
@@ -1550,6 +1610,10 @@ export type HentNodeErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentNodeError = HentNodeErrors[keyof HentNodeErrors];
@@ -1620,6 +1684,10 @@ export type HentVegobjektHendelserForTyperErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentVegobjektHendelserForTyperError = HentVegobjektHendelserForTyperErrors[keyof HentVegobjektHendelserForTyperErrors];
@@ -1691,6 +1759,10 @@ export type HentVegobjektHendelserErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentVegobjektHendelserError = HentVegobjektHendelserErrors[keyof HentVegobjektHendelserErrors];
@@ -1750,6 +1822,10 @@ export type StreamVegobjekthendelserErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type StreamVegobjekthendelserError = StreamVegobjekthendelserErrors[keyof StreamVegobjekthendelserErrors];
@@ -1801,6 +1877,10 @@ export type HentSisteVegobjektHendelseIdErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentSisteVegobjektHendelseIdError = HentSisteVegobjektHendelseIdErrors[keyof HentSisteVegobjektHendelseIdErrors];
@@ -1851,6 +1931,10 @@ export type HentSisteVegobjektHendelseId1Errors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentSisteVegobjektHendelseId1Error = HentSisteVegobjektHendelseId1Errors[keyof HentSisteVegobjektHendelseId1Errors];
@@ -1917,6 +2001,10 @@ export type HentVegnettHendelserErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentVegnettHendelserError = HentVegnettHendelserErrors[keyof HentVegnettHendelserErrors];
@@ -1963,6 +2051,10 @@ export type HentSisteVegnettHendelseErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentSisteVegnettHendelseError = HentSisteVegnettHendelseErrors[keyof HentSisteVegnettHendelseErrors];
@@ -2029,6 +2121,10 @@ export type HentVeglenkesekvensHendelserErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentVeglenkesekvensHendelserError = HentVeglenkesekvensHendelserErrors[keyof HentVeglenkesekvensHendelserErrors];
@@ -2083,6 +2179,10 @@ export type StreamVeglenkesekvensHendelserErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type StreamVeglenkesekvensHendelserError = StreamVeglenkesekvensHendelserErrors[keyof StreamVeglenkesekvensHendelserErrors];
@@ -2129,6 +2229,10 @@ export type HentSisteVeglenkesekvensHendelseErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentSisteVeglenkesekvensHendelseError = HentSisteVeglenkesekvensHendelseErrors[keyof HentSisteVeglenkesekvensHendelseErrors];
@@ -2195,6 +2299,10 @@ export type HentNodeHendelserErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentNodeHendelserError = HentNodeHendelserErrors[keyof HentNodeHendelserErrors];
@@ -2241,6 +2349,10 @@ export type HentSisteNodeHendelseErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentSisteNodeHendelseError = HentSisteNodeHendelseErrors[keyof HentSisteNodeHendelseErrors];
@@ -2296,6 +2408,10 @@ export type HentHendelserForEndringssettErrors = {
      * Internal Server Error
      */
     500: ProblemDetail;
+    /**
+     * Gateway Timeout
+     */
+    504: ProblemDetail;
 };
 
 export type HentHendelserForEndringssettError = HentHendelserForEndringssettErrors[keyof HentHendelserForEndringssettErrors];

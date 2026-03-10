@@ -1,9 +1,18 @@
 import { client as datakatalogClient } from './generated/datakatalog/client.gen'
 import { client as uberiketClient } from './generated/uberiket/client.gen'
 
-const TIMEOUT_MS = 20_000
+const TIMEOUT_MS = 30_000
 
-const fetchWithTimeout = ((input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) })) as typeof fetch
+function buildRequestSignal(signal?: AbortSignal | null): AbortSignal {
+  const timeoutSignal = AbortSignal.timeout(TIMEOUT_MS)
+  if (!signal) return timeoutSignal
+  if (typeof AbortSignal.any === 'function') {
+    return AbortSignal.any([signal, timeoutSignal])
+  }
+  return timeoutSignal
+}
+
+const fetchWithTimeout = ((input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, signal: buildRequestSignal(init?.signal) })) as typeof fetch
 
 const commonConfig = {
   headers: { 'X-Client': 'nvdb-finn-vegdata' },

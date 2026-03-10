@@ -1,5 +1,9 @@
 import './apiConfig'
-import { hentVeglenkesekvenser as sdkHentVeglenkesekvenser, hentVegobjekterMultiType as sdkHentVegobjekterMultiType } from './generated/uberiket/sdk.gen'
+import {
+  hentVeglenkesekvenser as sdkHentVeglenkesekvenser,
+  hentVegobjekterMultiType as sdkHentVegobjekterMultiType,
+  hentVegobjekterMultiTypeStream as sdkHentVegobjekterMultiTypeStream,
+} from './generated/uberiket/sdk.gen'
 import type {
   BoolskEgenskap,
   DatoEgenskap,
@@ -22,7 +26,7 @@ import type {
   Vegobjekt,
   VegobjekterSide,
 } from './generated/uberiket/types.gen'
-import { zHentVeglenkesekvenserResponse } from './generated/uberiket/zod.gen'
+import { zHentVeglenkesekvenserResponse, zVegobjekt } from './generated/uberiket/zod.gen'
 
 export type Stedfesting = StedfestingLinjer | StedfestingPunkter | StedfestingSving | StedfestingMangler
 
@@ -108,6 +112,34 @@ type VegobjekterQuery = {
   start?: string
 }
 
+type VegobjekterStreamQuery = {
+  typeIds?: number[]
+  polygon?: string
+  vegsystemreferanse?: string
+  dato?: string
+  antall?: number
+  signal?: AbortSignal
+  onProgress?: (fetchedCount: number) => void
+}
+
+export const VEGOBJEKTER_STREAM_LIMIT = 10_000
+
+type VegobjekterStreamRequest = Omit<VegobjekterStreamQuery, 'onProgress' | 'signal'>
+type VegobjekterStreamProgress = NonNullable<VegobjekterStreamQuery['onProgress']>
+type VegobjekterStreamResult = {
+  vegobjekter: Vegobjekt[]
+  warning?: string | null
+}
+type VegobjekterStreamFetcher = (request: VegobjekterStreamRequest, onProgress: VegobjekterStreamProgress) => Promise<VegobjekterStreamResult>
+
+type InflightVegobjekterStream = {
+  fetchedCount: number
+  listeners: Set<VegobjekterStreamProgress>
+  promise: Promise<VegobjekterStreamResult>
+}
+
+const inflightVegobjekterStreams = new Map<string, InflightVegobjekterStream>()
+
 export class VegobjekterRequestError extends Error {
   status?: number
   detail?: string
@@ -124,10 +156,18 @@ export function isVegobjekterRequestError(error: unknown): error is VegobjekterR
   return error instanceof VegobjekterRequestError
 }
 
+function createVegobjekterRequestError(error: unknown, status?: number): VegobjekterRequestError {
+  const body = typeof error === 'object' && error !== null ? (error as { detail?: string; title?: string; status?: number }) : undefined
+  const resolvedStatus = status ?? body?.status
+  const detail = body?.detail
+  const title = body?.title ?? (typeof error === 'string' && error.length > 0 ? error : 'request failed')
+  return new VegobjekterRequestError(`Failed to fetch vegobjekter: ${title}`, resolvedStatus, detail)
+}
+
 export async function hentVegobjekter({ typeIds, stedfesting, vegsystemreferanse, dato, antall = 1000, start }: VegobjekterQuery): Promise<VegobjekterSide> {
   const response = await sdkHentVegobjekterMultiType({
     query: {
-      typeIder: typeIds ? ([typeIds.join(',')] as unknown as number[]) : undefined,
+      typeIder: typeIds,
       antall,
       inkluder: ['alle'],
       dato,
@@ -138,14 +178,247 @@ export async function hentVegobjekter({ typeIds, stedfesting, vegsystemreferanse
   })
 
   if (response.error) {
-    const httpStatus = response.response?.status
-    const errorBody = response.error as { status?: number; detail?: string } | undefined
-    const status = httpStatus ?? errorBody?.status
-    const detail = errorBody?.detail
-    throw new VegobjekterRequestError(`Failed to fetch vegobjekter: ${response.error}`, status, detail)
+    throw createVegobjekterRequestError(response.error, response.response?.status)
   }
 
   return response.data as VegobjekterSide
+}
+
+function parseVegobjektNdjsonLine(rawLine: string, lineNumber: number): Vegobjekt {
+  let parsedLine: unknown
+
+  try {
+    parsedLine = JSON.parse(rawLine)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`Failed to parse vegobjekter NDJSON at line ${lineNumber}: ${message}`)
+  }
+
+  if (!parsedLine || typeof parsedLine !== 'object') {
+    throw new Error(`Failed to parse vegobjekter NDJSON at line ${lineNumber}: expected an object`)
+  }
+
+  const validation = zVegobjekt.safeParse(parsedLine)
+  if (!validation.success) {
+    console.error(`Uberiket response validation error (vegobjekter stream, line ${lineNumber})`, validation.error.issues)
+  }
+
+  return parsedLine as Vegobjekt
+}
+
+export function parseVegobjekterNdjson(ndjson: string): Vegobjekt[] {
+  const vegobjekter: Vegobjekt[] = []
+  const lines = ndjson.split(/\r?\n/)
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const rawLine = lines[index]?.trim()
+    if (!rawLine) continue
+    vegobjekter.push(parseVegobjektNdjsonLine(rawLine, index + 1))
+  }
+
+  return vegobjekter
+}
+
+export function getVegobjekterStreamRequestKey({
+  typeIds,
+  polygon,
+  vegsystemreferanse,
+  dato,
+  antall = VEGOBJEKTER_STREAM_LIMIT,
+}: VegobjekterStreamRequest): string {
+  return JSON.stringify({
+    antall,
+    dato: dato ?? null,
+    polygon: polygon ?? null,
+    typeIds: typeIds ?? null,
+    vegsystemreferanse: vegsystemreferanse ?? null,
+  })
+}
+
+function isTimeoutErrorLike(error: unknown): boolean {
+  const name = typeof error === 'object' && error !== null && 'name' in error ? String((error as { name?: unknown }).name) : ''
+  const message = error instanceof Error ? error.message : String(error)
+  const normalizedMessage = message.toLowerCase()
+  return name === 'TimeoutError' || normalizedMessage.includes('timeout') || normalizedMessage.includes('timed out')
+}
+
+async function collectVegobjekterNdjsonStream(
+  stream: ReadableStream<Uint8Array>,
+  onProgress?: (fetchedCount: number) => void,
+): Promise<{ timedOut: boolean; vegobjekter: Vegobjekt[] }> {
+  const vegobjekter: Vegobjekt[] = []
+  const reader = stream.getReader()
+  const decoder = new TextDecoder()
+  let bufferedText = ''
+  let lineNumber = 0
+
+  const parseAvailableLines = (finalChunk: boolean) => {
+    const normalized = bufferedText.replace(/\r\n/g, '\n')
+    const lines = normalized.split('\n')
+    bufferedText = finalChunk ? '' : (lines.pop() ?? '')
+    const previousCount = vegobjekter.length
+
+    for (const line of lines) {
+      const rawLine = line.trim()
+      if (!rawLine) continue
+      lineNumber += 1
+      vegobjekter.push(parseVegobjektNdjsonLine(rawLine, lineNumber))
+    }
+
+    if (vegobjekter.length > previousCount) {
+      onProgress?.(vegobjekter.length)
+    }
+  }
+
+  while (true) {
+    try {
+      const { done, value } = await reader.read()
+      if (done) break
+      bufferedText += decoder.decode(value, { stream: true })
+      parseAvailableLines(false)
+    } catch (error) {
+      if (vegobjekter.length > 0 && isTimeoutErrorLike(error)) {
+        return {
+          timedOut: true,
+          vegobjekter,
+        }
+      }
+      throw error
+    }
+  }
+
+  bufferedText += decoder.decode()
+  parseAvailableLines(true)
+
+  return {
+    timedOut: false,
+    vegobjekter,
+  }
+}
+
+export async function parseVegobjekterNdjsonStream(stream: ReadableStream<Uint8Array>, onProgress?: (fetchedCount: number) => void): Promise<Vegobjekt[]> {
+  const result = await collectVegobjekterNdjsonStream(stream, onProgress)
+  return result.vegobjekter
+}
+
+export function runDedupedVegobjekterStream(
+  request: VegobjekterStreamRequest,
+  {
+    onProgress,
+    signal,
+  }: {
+    onProgress?: VegobjekterStreamProgress
+    signal?: AbortSignal
+  },
+  fetcher: VegobjekterStreamFetcher,
+): Promise<VegobjekterStreamResult> {
+  const requestKey = getVegobjekterStreamRequestKey(request)
+  let entry = inflightVegobjekterStreams.get(requestKey)
+  const progressListener = onProgress
+  let abortListener: (() => void) | undefined
+
+  if (!entry) {
+    const listeners = new Set<VegobjekterStreamProgress>()
+    if (progressListener) {
+      listeners.add(progressListener)
+    }
+    const createdEntry: InflightVegobjekterStream = {
+      fetchedCount: 0,
+      listeners,
+      promise: Promise.resolve({ vegobjekter: [] as Vegobjekt[] }),
+    }
+    inflightVegobjekterStreams.set(requestKey, createdEntry)
+
+    createdEntry.promise = fetcher(request, (fetchedCount) => {
+      createdEntry.fetchedCount = fetchedCount
+      for (const listener of createdEntry.listeners) {
+        listener(fetchedCount)
+      }
+    }).finally(() => {
+      inflightVegobjekterStreams.delete(requestKey)
+    })
+    entry = createdEntry
+  } else if (progressListener) {
+    entry.listeners.add(progressListener)
+    if (entry.fetchedCount > 0) {
+      progressListener(entry.fetchedCount)
+    }
+  }
+
+  if (signal && progressListener) {
+    abortListener = () => {
+      entry?.listeners.delete(progressListener)
+    }
+    signal.addEventListener('abort', abortListener, { once: true })
+  }
+
+  return entry.promise.finally(() => {
+    if (progressListener) {
+      entry?.listeners.delete(progressListener)
+    }
+    if (signal && abortListener) {
+      signal.removeEventListener('abort', abortListener)
+    }
+  })
+}
+
+async function fetchVegobjekterMedPolygonStream(
+  { typeIds, polygon, vegsystemreferanse, dato, antall = VEGOBJEKTER_STREAM_LIMIT }: VegobjekterStreamRequest,
+  onProgress: VegobjekterStreamProgress,
+): Promise<VegobjekterStreamResult> {
+  const response = await sdkHentVegobjekterMultiTypeStream({
+    query: {
+      typeIder: typeIds,
+      antall,
+      dato,
+      inkluder: ['alle'],
+      polygon,
+      vegsystemreferanse: vegsystemreferanse ? [vegsystemreferanse] : undefined,
+    },
+    parseAs: 'stream',
+  })
+
+  if (response.error) {
+    throw createVegobjekterRequestError(response.error, response.response?.status)
+  }
+
+  const stream = response.data as unknown
+
+  if (!(stream instanceof ReadableStream)) {
+    throw new Error('Failed to fetch vegobjekter: expected NDJSON stream response')
+  }
+
+  const result = await collectVegobjekterNdjsonStream(stream, onProgress)
+
+  return {
+    vegobjekter: result.vegobjekter,
+    warning: result.timedOut ? 'Viser delvis resultat: forespørselen traff tidsgrensen før alle vegobjekter ble hentet.' : null,
+  }
+}
+
+export function hentVegobjekterStream({
+  typeIds,
+  polygon,
+  vegsystemreferanse,
+  dato,
+  antall = VEGOBJEKTER_STREAM_LIMIT,
+  signal,
+  onProgress,
+}: VegobjekterStreamQuery): Promise<VegobjekterStreamResult> {
+  return runDedupedVegobjekterStream(
+    {
+      typeIds,
+      polygon,
+      vegsystemreferanse,
+      dato,
+      antall,
+    },
+    {
+      onProgress,
+      signal,
+    },
+    fetchVegobjekterMedPolygonStream,
+  )
 }
 
 export function getStedfestingFilter(veglenkesekvensIds: number[]): string {
