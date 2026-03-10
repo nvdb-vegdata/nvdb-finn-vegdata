@@ -30,8 +30,8 @@ mv -f "$TMP" "$FILE"
 (
   cd atlas
   if [[ -n "$RESPONSIBLE_USER" ]]; then
-    ac deploy -e "$ENV_NAME" "$DEPLOY" --non-interactive --block-until-finished --responsible-user "$RESPONSIBLE_USER"
+    ac deploy -e "$ENV_NAME" "$DEPLOY" --block-until-finished --responsible-user "$RESPONSIBLE_USER"
   else
-    ac deploy -e "$ENV_NAME" "$DEPLOY" --non-interactive --block-until-finished
+    ac deploy -e "$ENV_NAME" "$DEPLOY" --block-until-finished
   fi
 )
