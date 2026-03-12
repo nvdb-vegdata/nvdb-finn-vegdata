@@ -116,6 +116,7 @@ type VegobjekterStreamQuery = {
   typeIds?: number[]
   polygon?: string
   vegsystemreferanse?: string
+  stedfesting?: string
   dato?: string
   antall?: number
   signal?: AbortSignal
@@ -223,6 +224,7 @@ export function getVegobjekterStreamRequestKey({
   typeIds,
   polygon,
   vegsystemreferanse,
+  stedfesting,
   dato,
   antall = VEGOBJEKTER_STREAM_LIMIT,
 }: VegobjekterStreamRequest): string {
@@ -230,6 +232,7 @@ export function getVegobjekterStreamRequestKey({
     antall,
     dato: dato ?? null,
     polygon: polygon ?? null,
+    stedfesting: stedfesting ?? null,
     typeIds: typeIds ?? null,
     vegsystemreferanse: vegsystemreferanse ?? null,
   })
@@ -362,8 +365,8 @@ export function runDedupedVegobjekterStream(
   })
 }
 
-async function fetchVegobjekterMedPolygonStream(
-  { typeIds, polygon, vegsystemreferanse, dato, antall = VEGOBJEKTER_STREAM_LIMIT }: VegobjekterStreamRequest,
+async function fetchVegobjekterStreamRequest(
+  { typeIds, polygon, vegsystemreferanse, stedfesting, dato, antall = VEGOBJEKTER_STREAM_LIMIT }: VegobjekterStreamRequest,
   onProgress: VegobjekterStreamProgress,
 ): Promise<VegobjekterStreamResult> {
   const response = await sdkHentVegobjekterMultiTypeStream({
@@ -373,6 +376,7 @@ async function fetchVegobjekterMedPolygonStream(
       dato,
       inkluder: ['alle'],
       polygon,
+      stedfesting: stedfesting ? [stedfesting] : undefined,
       vegsystemreferanse: vegsystemreferanse ? [vegsystemreferanse] : undefined,
     },
     parseAs: 'stream',
@@ -400,6 +404,7 @@ export function hentVegobjekterStream({
   typeIds,
   polygon,
   vegsystemreferanse,
+  stedfesting,
   dato,
   antall = VEGOBJEKTER_STREAM_LIMIT,
   signal,
@@ -410,6 +415,7 @@ export function hentVegobjekterStream({
       typeIds,
       polygon,
       vegsystemreferanse,
+      stedfesting,
       dato,
       antall,
     },
@@ -417,7 +423,7 @@ export function hentVegobjekterStream({
       onProgress,
       signal,
     },
-    fetchVegobjekterMedPolygonStream,
+    fetchVegobjekterStreamRequest,
   )
 }
 

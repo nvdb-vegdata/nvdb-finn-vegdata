@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'bun:test'
-import { hentVegobjekterStream, parseVegobjekterNdjson, parseVegobjekterNdjsonStream, runDedupedVegobjekterStream } from './uberiketClient'
+import {
+  getVegobjekterStreamRequestKey,
+  hentVegobjekterStream,
+  parseVegobjekterNdjson,
+  parseVegobjekterNdjsonStream,
+  runDedupedVegobjekterStream,
+} from './uberiketClient'
 
 describe('parseVegobjekterNdjson', () => {
   test('parses vegobjekter from NDJSON and ignores blank lines', () => {
@@ -53,7 +59,7 @@ describe('parseVegobjekterNdjson', () => {
     }
 
     const fetcher = async (
-      _request: { antall?: number; dato?: string; polygon?: string; typeIds?: number[]; vegsystemreferanse?: string },
+      _request: { antall?: number; dato?: string; polygon?: string; stedfesting?: string; typeIds?: number[]; vegsystemreferanse?: string },
       onProgress: (fetchedCount: number) => void,
     ) => {
       fetchCalls += 1
@@ -88,7 +94,14 @@ describe('parseVegobjekterNdjson', () => {
       vegsystemreferanse: 'EV6S1',
     }
 
-    const fetcher = async (_request: { antall?: number; dato?: string; polygon?: string; typeIds?: number[]; vegsystemreferanse?: string }) => {
+    const fetcher = async (_request: {
+      antall?: number
+      dato?: string
+      polygon?: string
+      stedfesting?: string
+      typeIds?: number[]
+      vegsystemreferanse?: string
+    }) => {
       fetchCalls += 1
       await Promise.resolve()
       return {
@@ -101,6 +114,47 @@ describe('parseVegobjekterNdjson', () => {
     expect(fetchCalls).toBe(1)
     expect(resultA.vegobjekter).toHaveLength(1)
     expect(resultB.vegobjekter).toHaveLength(1)
+  })
+
+  test('deduplicates identical stedfesting stream requests', async () => {
+    let fetchCalls = 0
+
+    const request = {
+      antall: 10000,
+      dato: '2026-03-10',
+      stedfesting: '0.1-0.4@1234,0.5@5678',
+    }
+
+    const fetcher = async (_request: {
+      antall?: number
+      dato?: string
+      polygon?: string
+      stedfesting?: string
+      typeIds?: number[]
+      vegsystemreferanse?: string
+    }) => {
+      fetchCalls += 1
+      await Promise.resolve()
+      return {
+        vegobjekter: [{ id: 404, versjon: 1, typeId: 4, sistEndret: '2026-03-10T10:00:00Z' }],
+      }
+    }
+
+    const [resultA, resultB] = await Promise.all([runDedupedVegobjekterStream(request, {}, fetcher), runDedupedVegobjekterStream(request, {}, fetcher)])
+
+    expect(fetchCalls).toBe(1)
+    expect(resultA.vegobjekter).toHaveLength(1)
+    expect(resultB.vegobjekter).toHaveLength(1)
+  })
+
+  test('includes stedfesting in the stream request key', () => {
+    expect(
+      getVegobjekterStreamRequestKey({
+        antall: 10000,
+        dato: '2026-03-10',
+        stedfesting: '0.1-0.4@1234,0.5@5678',
+      }),
+    ).toContain('"stedfesting":"0.1-0.4@1234,0.5@5678"')
   })
 
   test('keeps partial stream results on timeout and returns a warning', async () => {

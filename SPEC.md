@@ -18,7 +18,7 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
 4. **Define Area/Route** - Draw a small polygon or paste a polygon WKT and click "Søk"/"Kopier WKT", enter a vegsystemreferanse (e.g., "FV6666 S1"), or provide stedfesting (e.g., "0.2-0.5@1234")
 5. **Fetch Veglenker** - Query veglenkesekvenser by polygon, vegsystemreferanse, or stedfesting IDs (configurable limit, default 500, max 1000)
 6. **Visualize Veglenker** - Display veglenker on map (only those with geometry overlapping polygon). Polygon clipping is enabled by default, fading the full veglenke and overlaying only the portion inside the polygon.
-7. **Fetch Vegobjekter** - In polygon mode and strekning mode, fetch vegobjekter for all selected types directly from `GET /api/v1/vegobjekter/stream` using the drawn polygon or vegsystemreferanse and parse the NDJSON response incrementally. While the stream is active, the UI shows how many vegobjekter have been fetched so far. If the stream reaches the request limit of 10,000 objects, show a warning suggesting a smaller area or narrower strekning to fetch all results. If the stream times out after some vegobjekter have already arrived, keep the partial results and show a warning that the result set is incomplete. Stedfesting mode uses the provided stedfesting filter directly against the paged endpoint. `dato` is always sent in the vegobjekt query (selected date when enabled, otherwise today's date). If `metadata.neste` is present on paged responses, fetch subsequent pages using the `start` token. The "Hent flere" button loads additional pages in batches of up to 10,000 objects per click.
+7. **Fetch Vegobjekter** - In polygon mode, strekning mode, and stedfesting mode, fetch vegobjekter for all selected types directly from `GET /api/v1/vegobjekter/stream` using the drawn polygon, vegsystemreferanse, or stedfesting filter and parse the NDJSON response incrementally. While the stream is active, the UI shows how many vegobjekter have been fetched so far. If the stream reaches the request limit of 10,000 objects, show a warning suggesting a smaller area, narrower strekning, or fewer/smaller stedfestinger to fetch all results. If the stream times out after some vegobjekter have already arrived, keep the partial results and show a warning that the result set is incomplete. `dato` is always sent in the vegobjekt query (selected date when enabled, otherwise today's date).
 8. **Inspect** - View detailed vegobjekt information in a collapsible list
 
 ## Key Concepts
@@ -146,7 +146,6 @@ The UI uses a small set of global CSS tokens (in `src/index.css` under `:root`) 
 |----------|---------|
 | `GET /api/v1/vegnett/veglenkesekvenser` | Query road segments by polygon |
 | `GET /api/v1/vegobjekter/stream?typeIder=...` | Stream road objects by type IDs with polygon/stedfesting/vegsystemreferanse as NDJSON (always includes `dato`) |
-| `GET /api/v1/vegobjekter?typeIder=...` | Query road objects by type IDs with stedfesting/vegsystemreferanse when paged results are needed |
 
 Query parameters:
 - `polygon`: UTM33 polygon coordinates
@@ -155,7 +154,6 @@ Query parameters:
 - `dato`: Date for vegobjekt query (selected date when enabled, otherwise today's date)
 - `inkluder`: Include stedfesting, egenskaper, gyldighetsperiode, barn
 - `antall`: Limit results
-- `start`: Pagination token from `metadata.neste.start` for the next page
 
 ### Veglenke Position Calculation
 
@@ -197,11 +195,12 @@ When querying vegobjekter in polygon mode, the app sends the drawn polygon direc
    - Polygon is converted to UTM33 coordinates
 
 6. **Query and Display**
-    - App queries veglenkesekvenser by polygon, vegsystemreferanse, or stedfesting IDs (configurable limit, default 500, max 1000)
+   - App queries veglenkesekvenser by polygon, vegsystemreferanse, or stedfesting IDs (configurable limit, default 500, max 1000)
+   - Polygon and strekning searches show a warning when the veglenkesekvens result count hits the configured limit, since the map may not include all matches
    - Veglenker with geometry overlapping polygon are rendered on map
    - Veglenker are filtered client-side by gyldighetsperiode for the active reference date (`startdato` inclusive, `sluttdato` exclusive)
    - Stedfesting mode renders full veglenker in a lighter style and overlays clipped stedfesting geometry
-   - Queries vegobjekter with the stream endpoint for polygon mode and strekning mode, or direct stedfesting filter for stedfesting mode
+   - Queries vegobjekter with the stream endpoint for polygon mode, strekning mode, and stedfesting mode
    - Includes `dato` in vegobjekt query (selected date when enabled, otherwise today's date)
 
 7. **Inspect Vegobjekter**
@@ -289,7 +288,7 @@ To determine if a vegobjekt is on a specific veglenke:
 
 A "Last ned CSV" button in the vegobjekt list header opens a popover (CSS anchor positioning) with two download options.
 
-When the user clicks a download option and there are unfetched pages remaining (`hasNextPage`), the app automatically fetches remaining pages (up to 10,000 objects) before generating the CSV. The button text changes to "Henter alle..." and is disabled during the fetch. Once fetching completes, the CSV is generated with the loaded data and downloaded. If all data is already loaded, the download happens immediately.
+When the user clicks a download option, the app generates the CSV directly from the streamed result set that is already loaded in memory.
 
 ### Download Options
 1. **Alle typer i én fil** — Downloads a single `vegobjekter.csv` containing a summary section at the top (TypeID, TypeNavn, Antall per type), followed by a blank line, then all vegobjekter across all types. Data headers: `TypeID`, `TypeNavn`, `ID`, `Versjon`, `Startdato`, `Sluttdato`, `Stedfesting`. No egenskaper columns.

@@ -25,6 +25,7 @@ import {
 } from './state/atoms'
 import { ensureProjections } from './utils/projections'
 import { parseStedfestingInput } from './utils/stedfestingParser'
+import { getVeglenkesekvensLimitWarningKey, getVeglenkesekvensLimitWarningMessage } from './utils/veglenkesekvensLimitWarning'
 
 ensureProjections()
 
@@ -77,11 +78,6 @@ export default function App() {
     vegobjekterByType,
     isLoading: vegobjekterLoading,
     error: vegobjekterError,
-    hasNextPage: vegobjekterHasNextPage,
-    fetchNextPage: fetchNextVegobjekterPage,
-    isFetchingNextPage: vegobjekterFetchingNextPage,
-    fetchAllPages: fetchAllVegobjekterPages,
-    isFetchingAll: vegobjekterFetchingAll,
     isStreaming: vegobjekterStreaming,
     streamingFetchedCount: vegobjekterStreamingFetchedCount,
     streamWarning: vegobjekterStreamWarning,
@@ -103,13 +99,15 @@ export default function App() {
   const totalVeglenker = veglenkeResult?.veglenkesekvenser.reduce((sum, vs) => sum + (vs.veglenker?.length ?? 0), 0) ?? 0
 
   const limitReached = veglenkeResult?.metadata?.returnert === veglenkesekvensLimit
+  const limitWarningMessage = getVeglenkesekvensLimitWarningMessage(searchMode, limitReached, veglenkesekvensLimit)
+  const limitWarningKey = getVeglenkesekvensLimitWarningKey(searchMode, limitReached, polygonUtm33, strekning, veglenkesekvensLimit)
 
   const [warningDismissed, setWarningDismissed] = useState(false)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset when polygon changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset when the warning applies to a new search
   useEffect(() => {
     setWarningDismissed(false)
-  }, [polygon])
+  }, [limitWarningKey])
 
   const totalVegobjekter = Array.from(vegobjekterByType.values()).reduce((sum, arr) => sum + arr.length, 0)
 
@@ -148,9 +146,9 @@ export default function App() {
 
       <main className="map-container">
         <MapView veglenkesekvenser={veglenkeResult?.veglenkesekvenser} vegobjekterByType={vegobjekterByType} isLoadingVeglenker={veglenkerLoading} />
-        {searchMode === 'polygon' && limitReached && !warningDismissed && (
+        {limitWarningMessage && !warningDismissed && (
           <div className="limit-warning">
-            <span>⚠️ Området inneholder flere veglenkesekvenser enn grensen ({veglenkesekvensLimit}). Tegn et mindre område for å se alle.</span>
+            <span>⚠️ {limitWarningMessage}</span>
             <button type="button" className="limit-warning-close" onClick={() => setWarningDismissed(true)} aria-label="Lukk advarsel">
               <X size={16} aria-hidden="true" />
             </button>
@@ -187,13 +185,6 @@ export default function App() {
           <VegobjektList
             vegobjekterByType={vegobjekterByType}
             isLoading={vegobjekterLoading}
-            hasNextPage={vegobjekterHasNextPage}
-            isFetchingNextPage={vegobjekterFetchingNextPage}
-            onFetchNextPage={() => {
-              void fetchNextVegobjekterPage()
-            }}
-            fetchAllPages={fetchAllVegobjekterPages}
-            isFetchingAll={vegobjekterFetchingAll}
             isStreaming={vegobjekterStreaming}
             streamingFetchedCount={vegobjekterStreamingFetchedCount}
             streamWarning={vegobjekterStreamWarning}
