@@ -14,6 +14,7 @@ interface Props {
   streamWarning?: string | null
   resultLimitReached?: boolean
   resultLimitMessage?: string | null
+  outsidePolygonCount?: number
 }
 
 export default function VegobjektList({
@@ -24,6 +25,7 @@ export default function VegobjektList({
   streamWarning = null,
   resultLimitReached = false,
   resultLimitMessage = null,
+  outsidePolygonCount = 0,
 }: Props) {
   const selectedTypes = useAtomValue(selectedTypesAtom)
   const focusedVegobjekt = useAtomValue(focusedVegobjektAtom)
@@ -98,6 +100,7 @@ export default function VegobjektList({
           ) : (
             <span className="vegobjekt-list-count">
               {totalCount} totalt
+              {outsidePolygonCount > 0 ? ` (${outsidePolygonCount} utenfor polygon)` : ''}
               {resultLimitReached ? ' • maksgrense nådd' : ''}
             </span>
           )}

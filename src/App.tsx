@@ -14,6 +14,7 @@ import { useVegobjekttyper } from './hooks/useVegobjekttyper'
 import {
   allTypesSelectedAtom,
   polygonAtom,
+  polygonClipAtom,
   searchDateAtom,
   searchDateEnabledAtom,
   searchModeAtom,
@@ -34,6 +35,7 @@ export default function App() {
   const [selectedTypes, setSelectedTypes] = useAtom(selectedTypesAtom)
   const allTypesSelected = useAtomValue(allTypesSelectedAtom)
   const polygon = useAtomValue(polygonAtom)
+  const polygonClip = useAtomValue(polygonClipAtom)
   const searchDateEnabled = useAtomValue(searchDateEnabledAtom)
   const searchDate = useAtomValue(searchDateAtom)
   const veglenkesekvensLimit = useAtomValue(veglenkesekvensLimitAtom)
@@ -74,8 +76,11 @@ export default function App() {
     limit: veglenkesekvensLimit,
   })
 
+  const limitReached = veglenkeResult?.metadata?.returnert === veglenkesekvensLimit
+
   const {
     vegobjekterByType,
+    outsidePolygonCount,
     isLoading: vegobjekterLoading,
     error: vegobjekterError,
     isStreaming: vegobjekterStreaming,
@@ -87,9 +92,13 @@ export default function App() {
     selectedTypes,
     allTypesSelected,
     polygonUtm33: searchMode === 'polygon' ? polygonUtm33 : null,
+    polygon: searchMode === 'polygon' ? polygon : null,
+    polygonClip: searchMode === 'polygon' ? polygonClip : true,
     vegsystemreferanse: searchMode === 'strekning' ? strekning : null,
     stedfestingFilterDirect: searchMode === 'stedfesting' ? (stedfestingParsed?.stedfestingFilter ?? null) : null,
     searchDate: searchDateEnabled ? searchDate : null,
+    veglenkesekvenser: veglenkeResult?.veglenkesekvenser,
+    veglenkesekvensLimitReached: limitReached,
   })
 
   useVegobjekterErrorMessage(vegobjekterError)
@@ -98,7 +107,6 @@ export default function App() {
 
   const totalVeglenker = veglenkeResult?.veglenkesekvenser.reduce((sum, vs) => sum + (vs.veglenker?.length ?? 0), 0) ?? 0
 
-  const limitReached = veglenkeResult?.metadata?.returnert === veglenkesekvensLimit
   const limitWarningMessage = getVeglenkesekvensLimitWarningMessage(searchMode, limitReached, veglenkesekvensLimit)
   const limitWarningKey = getVeglenkesekvensLimitWarningKey(searchMode, limitReached, polygonUtm33, strekning, veglenkesekvensLimit)
 
@@ -138,7 +146,7 @@ export default function App() {
             <>
               {allTypesSelected ? 'Alle typer valgt' : `${selectedTypes.length} type(r) valgt`}
               {totalVeglenker > 0 && ` | ${totalVeglenker} veglenke(r)`}
-              {totalVegobjekter > 0 && ` | ${totalVegobjekter} objekt(er)`}
+              {totalVegobjekter > 0 && ` | ${totalVegobjekter} objekt(er)${outsidePolygonCount > 0 ? ` (${outsidePolygonCount} utenfor polygon)` : ''}`}
             </>
           )}
         </div>
@@ -190,6 +198,7 @@ export default function App() {
             streamWarning={vegobjekterStreamWarning}
             resultLimitReached={vegobjekterResultLimitReached}
             resultLimitMessage={vegobjekterResultLimitMessage}
+            outsidePolygonCount={outsidePolygonCount}
           />
         )}
       </aside>

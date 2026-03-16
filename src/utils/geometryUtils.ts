@@ -1,4 +1,5 @@
-import type { Polygon } from 'ol/geom'
+import WKT from 'ol/format/WKT'
+import type { LineString, Point, Polygon } from 'ol/geom'
 import type { Stedfesting, VeglenkesekvensMedPosisjoner } from '../api/uberiketClient'
 import { getVegobjektPositions } from '../api/uberiketClient'
 
@@ -179,6 +180,13 @@ type FractionRange = {
   endFraction: number
 }
 
+type PositionRange = {
+  start: number
+  end: number
+}
+
+type VeglenkesekvensOverlapIndex = Map<number, PositionRange[]>
+
 const INTERSECTION_EPSILON = 1e-8
 
 function lineSegmentIntersectionParam(p1: number[], p2: number[], p3: number[], p4: number[]): number | null {
@@ -290,4 +298,149 @@ export function getLineStringOverlapFractions(coords: number[][], polygon: Polyg
   }
 
   return mergeFractionRanges(ranges)
+}
+
+function mergePositionRanges(ranges: PositionRange[]): PositionRange[] {
+  if (ranges.length === 0) return []
+
+  const sorted = ranges
+    .map((range) => ({
+      start: Math.min(range.start, range.end),
+      end: Math.max(range.start, range.end),
+    }))
+    .sort((a, b) => a.start - b.start)
+
+  const merged: PositionRange[] = []
+  let current = { ...sorted[0]! }
+
+  for (let i = 1; i < sorted.length; i += 1) {
+    const next = sorted[i]
+    if (!next) continue
+
+    if (next.start <= current.end) {
+      current.end = Math.max(current.end, next.end)
+    } else {
+      merged.push(current)
+      current = { ...next }
+    }
+  }
+
+  merged.push(current)
+  return merged
+}
+
+export function clipVeglenkesekvenserToPolygon(veglenkesekvenser: VeglenkesekvensMedPosisjoner[], polygon: Polygon): VeglenkesekvensMedPosisjoner[] {
+  const wktFormat = new WKT()
+
+  return veglenkesekvenser
+    .map((vs) => {
+      const clippedVeglenker = (vs.veglenker ?? []).flatMap((vl) => {
+        if (!vl.geometri?.wkt) {
+          return [vl]
+        }
+
+        try {
+          const geom = wktFormat.readGeometry(vl.geometri.wkt, {
+            dataProjection: `EPSG:${vl.geometri.srid}`,
+            featureProjection: 'EPSG:25833',
+          })
+
+          if (!geom.intersectsExtent(polygon.getExtent())) {
+            return []
+          }
+
+          if (geom.getType() === 'Point') {
+            const point = (geom as Point).getCoordinates()
+            return polygon.containsXY(point[0] ?? 0, point[1] ?? 0) ? [vl] : []
+          }
+
+          if (geom.getType() !== 'LineString') {
+            return [vl]
+          }
+
+          const coords = (geom as LineString).getCoordinates()
+          const overlapFractions = getLineStringOverlapFractions(coords, polygon)
+          if (overlapFractions.length === 0) {
+            return []
+          }
+
+          const span = vl.sluttposisjon - vl.startposisjon
+          if (span <= 0) {
+            return []
+          }
+
+          return overlapFractions.map((overlap) => ({
+            ...vl,
+            startposisjon: vl.startposisjon + span * overlap.startFraction,
+            sluttposisjon: vl.startposisjon + span * overlap.endFraction,
+          }))
+        } catch (error) {
+          console.warn('Failed to clip veglenke to polygon', error)
+          return [vl]
+        }
+      })
+
+      return {
+        ...vs,
+        veglenker: clippedVeglenker,
+      }
+    })
+    .filter((vs) => vs.veglenker.length > 0)
+}
+
+export function createVeglenkesekvensOverlapIndex(veglenkesekvenser: VeglenkesekvensMedPosisjoner[]): VeglenkesekvensOverlapIndex {
+  const index = new Map<number, PositionRange[]>()
+
+  for (const vs of veglenkesekvenser) {
+    const ranges = mergePositionRanges((vs.veglenker ?? []).map((vl) => ({ start: vl.startposisjon, end: vl.sluttposisjon })))
+    if (ranges.length > 0) {
+      index.set(vs.id, ranges)
+    }
+  }
+
+  return index
+}
+
+function positionOverlapsRanges(position: PositionRange, ranges: PositionRange[] | undefined): boolean {
+  if (!ranges || ranges.length === 0) return false
+
+  const start = Math.min(position.start, position.end)
+  const end = Math.max(position.start, position.end)
+
+  if (start === end) {
+    return ranges.some((range) => pointInRange(start, range.start, range.end))
+  }
+
+  return ranges.some((range) => rangesOverlap(range.start, range.end, start, end) !== null)
+}
+
+export function hasStedfestingOverlap(stedfesting: Stedfesting | undefined, veglenkesekvensOverlapIndex: VeglenkesekvensOverlapIndex): boolean {
+  if (!stedfesting) return false
+
+  switch (stedfesting.type) {
+    case 'StedfestingLinjer':
+      return stedfesting.linjer.some((linje) =>
+        positionOverlapsRanges({ start: linje.startposisjon, end: linje.sluttposisjon }, veglenkesekvensOverlapIndex.get(linje.id)),
+      )
+
+    case 'StedfestingPunkter':
+      return stedfesting.punkter.some((punkt) =>
+        positionOverlapsRanges({ start: punkt.posisjon, end: punkt.posisjon }, veglenkesekvensOverlapIndex.get(punkt.id)),
+      )
+
+    case 'StedfestingSving':
+      return (
+        positionOverlapsRanges(
+          { start: stedfesting.startpunkt.posisjon, end: stedfesting.startpunkt.posisjon },
+          veglenkesekvensOverlapIndex.get(stedfesting.startpunkt.id),
+        ) ||
+        positionOverlapsRanges(
+          { start: stedfesting.sluttpunkt.posisjon, end: stedfesting.sluttpunkt.posisjon },
+          veglenkesekvensOverlapIndex.get(stedfesting.sluttpunkt.id),
+        )
+      )
+
+    default:
+      return false
+  }
 }

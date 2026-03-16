@@ -1,16 +1,29 @@
 import { useQuery } from '@tanstack/react-query'
+import type { Polygon } from 'ol/geom'
 import { useMemo, useState } from 'react'
 import type { Vegobjekttype } from '../api/datakatalogClient'
-import { hentVegobjekterStream, VEGOBJEKTER_STREAM_LIMIT, type Vegobjekt, VegobjekterRequestError } from '../api/uberiketClient'
+import {
+  hentVegobjekterStream,
+  type Stedfesting,
+  VEGOBJEKTER_STREAM_LIMIT,
+  type VeglenkesekvensMedPosisjoner,
+  type Vegobjekt,
+  VegobjekterRequestError,
+} from '../api/uberiketClient'
 import { getTodayDate } from '../utils/dateUtils'
+import { clipVeglenkesekvenserToPolygon, createVeglenkesekvensOverlapIndex, hasStedfestingOverlap } from '../utils/geometryUtils'
 
 type VegobjekterParams = {
   selectedTypes: Vegobjekttype[]
   allTypesSelected: boolean
   polygonUtm33?: string | null
+  polygon?: Polygon | null
+  polygonClip?: boolean
   vegsystemreferanse?: string | null
   stedfestingFilterDirect?: string | null
   searchDate?: string | null
+  veglenkesekvenser?: VeglenkesekvensMedPosisjoner[]
+  veglenkesekvensLimitReached?: boolean
 }
 
 type VegobjekterPage = {
@@ -18,7 +31,18 @@ type VegobjekterPage = {
   warning?: string | null
 }
 
-export function useVegobjekter({ selectedTypes, allTypesSelected, polygonUtm33, vegsystemreferanse, stedfestingFilterDirect, searchDate }: VegobjekterParams) {
+export function useVegobjekter({
+  selectedTypes,
+  allTypesSelected,
+  polygonUtm33,
+  polygon,
+  polygonClip = true,
+  vegsystemreferanse,
+  stedfestingFilterDirect,
+  searchDate,
+  veglenkesekvenser,
+  veglenkesekvensLimitReached = false,
+}: VegobjekterParams) {
   const trimmedPolygon = polygonUtm33?.trim() ?? ''
   const trimmedStrekning = vegsystemreferanse?.trim() ?? ''
   const trimmedSearchDate = searchDate?.trim() ?? ''
@@ -29,6 +53,7 @@ export function useVegobjekter({ selectedTypes, allTypesSelected, polygonUtm33, 
   const isStrekningSearch = trimmedStrekning.length > 0
   const isStedfestingSearch = directFilter.length > 0
   const isStreamSearch = isPolygonSearch || isStrekningSearch || isStedfestingSearch
+  const shouldFilterByOverlap = !veglenkesekvensLimitReached && (isStrekningSearch || (isPolygonSearch && polygonClip))
   const enabled = (allTypesSelected || selectedTypes.length > 0) && isStreamSearch
   const typeIds = useMemo(() => selectedTypes.map((type) => type.id).sort((a, b) => a - b), [selectedTypes])
   const typeIdList = useMemo(() => typeIds.join(','), [typeIds])
@@ -69,10 +94,27 @@ export function useVegobjekter({ selectedTypes, allTypesSelected, polygonUtm33, 
     enabled,
   })
 
-  const vegobjekterByType = new Map<number, Vegobjekt[]>(selectedTypes.map((type) => [type.id, [] as Vegobjekt[]]))
+  const overlapVeglenkesekvenser = useMemo(() => {
+    if (!shouldFilterByOverlap || !veglenkesekvenser) return null
+    if (isPolygonSearch) {
+      return polygon ? clipVeglenkesekvenserToPolygon(veglenkesekvenser, polygon) : []
+    }
+    return veglenkesekvenser
+  }, [isPolygonSearch, polygon, shouldFilterByOverlap, veglenkesekvenser])
 
-  const allVegobjekter = query.data?.vegobjekter ?? []
+  const overlapIndex = useMemo(() => {
+    if (!overlapVeglenkesekvenser) return null
+    return createVeglenkesekvensOverlapIndex(overlapVeglenkesekvenser)
+  }, [overlapVeglenkesekvenser])
+
+  const rawVegobjekter = query.data?.vegobjekter ?? []
+  const allVegobjekter = useMemo(() => {
+    if (!shouldFilterByOverlap) return rawVegobjekter
+    if (!overlapIndex) return []
+    return rawVegobjekter.filter((vegobjekt) => hasStedfestingOverlap(vegobjekt.stedfesting as Stedfesting | undefined, overlapIndex))
+  }, [overlapIndex, rawVegobjekter, shouldFilterByOverlap])
   const streamWarning = query.data?.warning ?? null
+  const vegobjekterByType = new Map<number, Vegobjekt[]>(selectedTypes.map((type) => [type.id, [] as Vegobjekt[]]))
 
   for (const vegobjekt of allVegobjekter) {
     const list = vegobjekterByType.get(vegobjekt.typeId)
@@ -93,13 +135,14 @@ export function useVegobjekter({ selectedTypes, allTypesSelected, polygonUtm33, 
 
   return {
     vegobjekterByType,
+    outsidePolygonCount: isPolygonSearch && shouldFilterByOverlap ? Math.max(0, rawVegobjekter.length - allVegobjekter.length) : 0,
     isLoading: query.isLoading,
     isError: query.isError,
     error,
     isStreaming,
     streamingFetchedCount,
     streamWarning,
-    resultLimitReached: allVegobjekter.length >= VEGOBJEKTER_STREAM_LIMIT,
+    resultLimitReached: rawVegobjekter.length >= VEGOBJEKTER_STREAM_LIMIT,
     resultLimitMessage: isPolygonSearch
       ? 'Resultatet traff grensen på 10 000 vegobjekter. Tegn et mindre område for å hente alle.'
       : isStrekningSearch

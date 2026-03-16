@@ -2,7 +2,15 @@ import { describe, expect, test } from 'bun:test'
 import { Polygon } from 'ol/geom'
 import type { StedfestingLinjer, StedfestingPunkter } from '../api/generated/uberiket/types.gen'
 import type { VeglenkeMedPosisjon, VeglenkesekvensMedPosisjoner } from '../api/uberiketClient'
-import { getClippedGeometries, getLineStringOverlapFractions, getPointAtFraction, sliceLineStringByFraction } from './geometryUtils'
+import {
+  clipVeglenkesekvenserToPolygon,
+  createVeglenkesekvensOverlapIndex,
+  getClippedGeometries,
+  getLineStringOverlapFractions,
+  getPointAtFraction,
+  hasStedfestingOverlap,
+  sliceLineStringByFraction,
+} from './geometryUtils'
 
 function veglenke(partial: Pick<VeglenkeMedPosisjon, 'nummer' | 'startposisjon' | 'sluttposisjon'>): VeglenkeMedPosisjon {
   return partial as VeglenkeMedPosisjon
@@ -324,5 +332,116 @@ describe('getLineStringOverlapFractions', () => {
 
     // Assert
     expect(result.length).toBe(0)
+  })
+})
+
+describe('clipVeglenkesekvenserToPolygon', () => {
+  test('clips veglenke position ranges to the polygon overlap', () => {
+    const polygon = new Polygon([
+      [
+        [-0.5, -0.5],
+        [0.5, -0.5],
+        [0.5, 0.5],
+        [-0.5, 0.5],
+        [-0.5, -0.5],
+      ],
+    ])
+
+    const veglenkesekvenser = [
+      veglenkesekvens({
+        id: 123,
+        veglenker: [
+          veglenke({
+            nummer: 1,
+            startposisjon: 0,
+            sluttposisjon: 1,
+            geometri: {
+              wkt: 'LINESTRING(-1 0, 1 0)',
+              srid: 25833,
+            },
+          } as VeglenkeMedPosisjon),
+        ],
+      }),
+    ]
+
+    const result = clipVeglenkesekvenserToPolygon(veglenkesekvenser, polygon)
+
+    expect(result).toHaveLength(1)
+    expect(result[0]?.veglenker).toHaveLength(1)
+    expect(result[0]?.veglenker[0]?.startposisjon).toBeCloseTo(0.25, 5)
+    expect(result[0]?.veglenker[0]?.sluttposisjon).toBeCloseTo(0.75, 5)
+  })
+})
+
+describe('hasStedfestingOverlap', () => {
+  test('returns false for vegobjekt on overlapping veglenke outside clipped polygon range', () => {
+    const polygon = new Polygon([
+      [
+        [-0.5, -0.5],
+        [0.5, -0.5],
+        [0.5, 0.5],
+        [-0.5, 0.5],
+        [-0.5, -0.5],
+      ],
+    ])
+
+    const veglenkesekvenser = [
+      veglenkesekvens({
+        id: 123,
+        veglenker: [
+          veglenke({
+            nummer: 1,
+            startposisjon: 0,
+            sluttposisjon: 1,
+            geometri: {
+              wkt: 'LINESTRING(-1 0, 1 0)',
+              srid: 25833,
+            },
+          } as VeglenkeMedPosisjon),
+        ],
+      }),
+    ]
+
+    const overlapIndex = createVeglenkesekvensOverlapIndex(clipVeglenkesekvenserToPolygon(veglenkesekvenser, polygon))
+    const stedfesting: StedfestingLinjer = {
+      type: 'StedfestingLinjer',
+      linjer: [
+        {
+          id: 123,
+          startposisjon: 0,
+          sluttposisjon: 0.1,
+          retning: 'MED',
+          sideposisjon: 'V',
+          kjorefelt: [],
+        },
+      ],
+    }
+
+    expect(hasStedfestingOverlap(stedfesting, overlapIndex)).toBe(false)
+  })
+
+  test('returns true when vegobjekt overlaps the strekning ranges on a veglenkesekvens', () => {
+    const overlapIndex = createVeglenkesekvensOverlapIndex([
+      veglenkesekvens({
+        id: 123,
+        veglenker: [veglenke({ nummer: 1, startposisjon: 0.3, sluttposisjon: 0.6 })],
+      }),
+    ])
+
+    const stedfesting: StedfestingLinjer = {
+      type: 'StedfestingLinjer',
+      linjer: [
+        {
+          id: 123,
+          startposisjon: 0.55,
+          sluttposisjon: 0.8,
+          retning: 'MED',
+          sideposisjon: 'V',
+          kjorefelt: [],
+        },
+      ],
+    }
+
+    expect(hasStedfestingOverlap(stedfesting, overlapIndex)).toBe(true)
   })
 })
