@@ -24,6 +24,7 @@ import {
   strekningAtom,
   veglenkesekvensLimitAtom,
 } from './state/atoms'
+import { getTodayDate } from './utils/dateUtils'
 import { ensureProjections } from './utils/projections'
 import { parseStedfestingInput } from './utils/stedfestingParser'
 import { getVeglenkesekvensLimitWarningKey, getVeglenkesekvensLimitWarningMessage } from './utils/veglenkesekvensLimitWarning'
@@ -59,6 +60,7 @@ export default function App() {
   useUrlSync(selectedTypes)
 
   const polygonUtm33 = useMemo(() => (searchMode === 'polygon' && polygon ? polygonToUtm33(polygon) : null), [polygon, searchMode])
+  const referenceDate = searchDateEnabled && searchDate ? searchDate : getTodayDate()
 
   const stedfestingParsed = useMemo(() => {
     if (searchMode !== 'stedfesting') return null
@@ -73,6 +75,7 @@ export default function App() {
     polygonUtm33,
     vegsystemreferanse: searchMode === 'strekning' ? strekning : null,
     veglenkesekvensIds: searchMode === 'stedfesting' ? (stedfestingParsed?.veglenkesekvensIds ?? null) : null,
+    referenceDate,
     limit: veglenkesekvensLimit,
   })
 
@@ -205,7 +208,7 @@ export default function App() {
 
       {veglenkerError && (
         <div className="error" style={{ position: 'absolute', top: 10, right: 10, zIndex: 1000 }}>
-          Kunne ikke hente data fra NVDB
+          {veglenkerError instanceof Error ? veglenkerError.message : 'Kunne ikke hente data fra NVDB'}
         </div>
       )}
     </div>

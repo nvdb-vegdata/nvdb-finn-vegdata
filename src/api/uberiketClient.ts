@@ -1,4 +1,6 @@
 import './apiConfig'
+import { isDateWithinGyldighetsperiode } from '../utils/dateUtils'
+import { parseVegsystemreferanse } from '../utils/vegsystemreferanseValidator'
 import {
   hentVeglenkesekvenser as sdkHentVeglenkesekvenser,
   hentVegobjekterMultiType as sdkHentVegobjekterMultiType,
@@ -13,6 +15,7 @@ import type {
   GeometriEgenskap,
   Geometristruktur,
   HeltallEgenskap,
+  InkluderIVegobjekt,
   StedfestingLinje,
   StedfestingLinjer,
   StedfestingMangler,
@@ -118,12 +121,15 @@ type VegobjekterStreamQuery = {
   vegsystemreferanse?: string
   stedfesting?: string
   dato?: string
+  inkluder?: InkluderIVegobjekt[]
   antall?: number
   signal?: AbortSignal
   onProgress?: (fetchedCount: number) => void
 }
 
 export const VEGOBJEKTER_STREAM_LIMIT = 10_000
+
+const VEGSYSTEMREFERANSE_FILTER_ERROR_MESSAGE = 'Kunne ikke avgrense strekningen sikkert for valgt dato. Prøv en kortere strekning eller en annen dato.'
 
 type VegobjekterStreamRequest = Omit<VegobjekterStreamQuery, 'onProgress' | 'signal'>
 type VegobjekterStreamProgress = NonNullable<VegobjekterStreamQuery['onProgress']>
@@ -226,11 +232,13 @@ export function getVegobjekterStreamRequestKey({
   vegsystemreferanse,
   stedfesting,
   dato,
+  inkluder = ['alle'],
   antall = VEGOBJEKTER_STREAM_LIMIT,
 }: VegobjekterStreamRequest): string {
   return JSON.stringify({
     antall,
     dato: dato ?? null,
+    inkluder,
     polygon: polygon ?? null,
     stedfesting: stedfesting ?? null,
     typeIds: typeIds ?? null,
@@ -366,7 +374,7 @@ export function runDedupedVegobjekterStream(
 }
 
 async function fetchVegobjekterStreamRequest(
-  { typeIds, polygon, vegsystemreferanse, stedfesting, dato, antall = VEGOBJEKTER_STREAM_LIMIT }: VegobjekterStreamRequest,
+  { typeIds, polygon, vegsystemreferanse, stedfesting, dato, inkluder = ['alle'], antall = VEGOBJEKTER_STREAM_LIMIT }: VegobjekterStreamRequest,
   onProgress: VegobjekterStreamProgress,
 ): Promise<VegobjekterStreamResult> {
   const response = await sdkHentVegobjekterMultiTypeStream({
@@ -374,7 +382,7 @@ async function fetchVegobjekterStreamRequest(
       typeIder: typeIds,
       antall,
       dato,
-      inkluder: ['alle'],
+      inkluder,
       polygon,
       stedfesting: stedfesting ? [stedfesting] : undefined,
       vegsystemreferanse: vegsystemreferanse ? [vegsystemreferanse] : undefined,
@@ -406,6 +414,7 @@ export function hentVegobjekterStream({
   vegsystemreferanse,
   stedfesting,
   dato,
+  inkluder,
   antall = VEGOBJEKTER_STREAM_LIMIT,
   signal,
   onProgress,
@@ -417,6 +426,7 @@ export function hentVegobjekterStream({
       vegsystemreferanse,
       stedfesting,
       dato,
+      inkluder,
       antall,
     },
     {
@@ -429,6 +439,165 @@ export function hentVegobjekterStream({
 
 export function getStedfestingFilter(veglenkesekvensIds: number[]): string {
   return veglenkesekvensIds.join(',')
+}
+
+type PositionRange = {
+  start: number
+  end: number
+}
+
+type VegsystemreferanseSupportTypeId = 915 | 916
+
+type VeglenkesekvenserForVegsystemreferanseQuery = {
+  vegsystemreferanse: string
+  dato: string
+  antall?: number
+}
+
+type VeglenkesekvenserForVegsystemreferanseDeps = {
+  hentVeglenkesekvenserFn?: typeof hentVeglenkesekvenser
+  hentVegobjekterStreamFn?: typeof hentVegobjekterStream
+}
+
+function normalizePositionRange(start: number, end: number): PositionRange {
+  return {
+    start: Math.min(start, end),
+    end: Math.max(start, end),
+  }
+}
+
+function mergePositionRanges(ranges: PositionRange[]): PositionRange[] {
+  if (ranges.length === 0) return []
+
+  const sorted = ranges.map((range) => normalizePositionRange(range.start, range.end)).sort((a, b) => a.start - b.start)
+
+  const merged: PositionRange[] = []
+  let current = { ...sorted[0]! }
+
+  for (let i = 1; i < sorted.length; i += 1) {
+    const next = sorted[i]
+    if (!next) continue
+
+    if (next.start <= current.end) {
+      current.end = Math.max(current.end, next.end)
+    } else {
+      merged.push(current)
+      current = { ...next }
+    }
+  }
+
+  merged.push(current)
+  return merged
+}
+
+function hasExclusiveRangeOverlap(range: PositionRange, overlapRanges: PositionRange[] | undefined): boolean {
+  if (!overlapRanges || overlapRanges.length === 0) return false
+
+  const normalizedRange = normalizePositionRange(range.start, range.end)
+  return overlapRanges.some((overlapRange) => Math.max(normalizedRange.start, overlapRange.start) < Math.min(normalizedRange.end, overlapRange.end))
+}
+
+function createVegsystemreferanseOverlapIndex(stotteobjekter: Vegobjekt[], referenceDate: string): Map<number, PositionRange[]> {
+  const overlapIndex = new Map<number, PositionRange[]>()
+
+  for (const stotteobjekt of stotteobjekter) {
+    if (!isDateWithinGyldighetsperiode(referenceDate, stotteobjekt.gyldighetsperiode)) {
+      continue
+    }
+
+    const stedfesting = stotteobjekt.stedfesting as Stedfesting | undefined
+    if (!stedfesting || stedfesting.type !== 'StedfestingLinjer') {
+      continue
+    }
+
+    for (const linje of stedfesting.linjer) {
+      const existing = overlapIndex.get(linje.id)
+      const range = normalizePositionRange(linje.startposisjon, linje.sluttposisjon)
+      if (existing) {
+        existing.push(range)
+      } else {
+        overlapIndex.set(linje.id, [range])
+      }
+    }
+  }
+
+  for (const [veglenkesekvensId, ranges] of overlapIndex.entries()) {
+    overlapIndex.set(veglenkesekvensId, mergePositionRanges(ranges))
+  }
+
+  return overlapIndex
+}
+
+export function getVegsystemreferanseSupportTypeId(vegsystemreferanse: string): VegsystemreferanseSupportTypeId {
+  const parsed = parseVegsystemreferanse(vegsystemreferanse)
+  if (!parsed) {
+    throw new Error(`Ugyldig vegsystemreferanse: ${vegsystemreferanse}`)
+  }
+
+  return parsed.strekning || parsed.delstrekning ? 916 : 915
+}
+
+export function filterVeglenkesekvenserByVegsystemreferanseObjects(
+  veglenkesekvenser: Veglenkesekvens[],
+  stotteobjekter: Vegobjekt[],
+  referenceDate: string,
+): Veglenkesekvens[] {
+  const overlapIndex = createVegsystemreferanseOverlapIndex(stotteobjekter, referenceDate)
+
+  return veglenkesekvenser
+    .map((veglenkesekvens) => {
+      const filteredVeglenker = (veglenkesekvens.veglenker ?? []).filter((veglenke) => {
+        if (!isDateWithinGyldighetsperiode(referenceDate, veglenke.gyldighetsperiode)) {
+          return false
+        }
+
+        const veglenkeRange = getVeglenkePositionRange(veglenkesekvens, veglenke)
+        if (!veglenkeRange) return false
+
+        return hasExclusiveRangeOverlap(veglenkeRange, overlapIndex.get(veglenkesekvens.id))
+      })
+
+      return {
+        ...veglenkesekvens,
+        veglenker: filteredVeglenker,
+      }
+    })
+    .filter((veglenkesekvens) => veglenkesekvens.veglenker.length > 0)
+}
+
+function assertCompleteVegsystemreferanseFiltergrunnlag(result: VegobjekterStreamResult) {
+  if (result.warning || result.vegobjekter.length >= VEGOBJEKTER_STREAM_LIMIT) {
+    throw new Error(VEGSYSTEMREFERANSE_FILTER_ERROR_MESSAGE)
+  }
+}
+
+export async function hentFiltrerteVeglenkesekvenserForVegsystemreferanse(
+  { vegsystemreferanse, dato, antall = 10 }: VeglenkesekvenserForVegsystemreferanseQuery,
+  deps: VeglenkesekvenserForVegsystemreferanseDeps = {},
+): Promise<VeglenkesekvenserSide> {
+  const hentVeglenkesekvenserFn = deps.hentVeglenkesekvenserFn ?? hentVeglenkesekvenser
+  const hentVegobjekterStreamFn = deps.hentVegobjekterStreamFn ?? hentVegobjekterStream
+  const supportTypeId = getVegsystemreferanseSupportTypeId(vegsystemreferanse)
+
+  const [veglenkesekvensResult, stotteobjektResult] = await Promise.all([
+    hentVeglenkesekvenserFn({
+      antall,
+      vegsystemreferanse,
+    }),
+    hentVegobjekterStreamFn({
+      vegsystemreferanse,
+      dato,
+      typeIds: [supportTypeId],
+      inkluder: ['stedfesting', 'gyldighetsperiode'],
+    }),
+  ])
+
+  assertCompleteVegsystemreferanseFiltergrunnlag(stotteobjektResult)
+
+  return {
+    ...veglenkesekvensResult,
+    veglenkesekvenser: filterVeglenkesekvenserByVegsystemreferanseObjects(veglenkesekvensResult.veglenkesekvenser, stotteobjektResult.vegobjekter, dato),
+  }
 }
 
 export interface VeglenkeRange {
