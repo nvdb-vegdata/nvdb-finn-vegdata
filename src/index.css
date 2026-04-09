@@ -707,6 +707,10 @@ body,
   width: 320px;
 }
 
+.stedfesting-controls {
+  width: 500px;
+}
+
 .polygon-controls {
   width: 520px;
 }
@@ -1564,4 +1568,61 @@ body,
   outline: 2px solid #7a4a00;
   outline-offset: 2px;
   border-radius: 2px;
+}
+
+/* Vegnett posisjon popup */
+.posisjon-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  font-size: 13px;
+  color: #555;
+}
+
+.posisjon-error {
+  font-size: 13px;
+  color: var(--color-danger);
+}
+
+.posisjon-empty {
+  font-size: 13px;
+  color: #666;
+}
+
+.posisjon-result-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+}
+
+.posisjon-result-item + .posisjon-result-item {
+  padding-top: var(--ui-space-2);
+  border-top: 1px solid var(--ui-border);
+}
+
+.posisjon-detail {
+  display: flex;
+  gap: var(--ui-space-2);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.posisjon-label {
+  color: #666;
+  min-width: 90px;
+}
+
+.posisjon-value {
+  font-family: monospace;
+  color: var(--ui-text);
+}
+
+.posisjon-copy-btn {
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #555;
+  display: inline-flex;
 }

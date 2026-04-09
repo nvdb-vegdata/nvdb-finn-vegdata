@@ -37,4 +37,14 @@ export default defineConfig([
     },
     plugins,
   },
+  {
+    input: {
+      path: './specs/vegnett.json',
+    },
+    output: {
+      path: 'src/api/generated/vegnett',
+      clean: true,
+    },
+    plugins,
+  },
 ])

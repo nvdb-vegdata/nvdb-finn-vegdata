@@ -1,5 +1,6 @@
 import { client as datakatalogClient } from './generated/datakatalog/client.gen'
 import { client as uberiketClient } from './generated/uberiket/client.gen'
+import { client as vegnettClient } from './generated/vegnett/client.gen'
 
 const TIMEOUT_MS = 30_000
 
@@ -28,4 +29,9 @@ datakatalogClient.setConfig({
 uberiketClient.setConfig({
   ...commonConfig,
   baseUrl: 'https://nvdbapiles.atlas.vegvesen.no/uberiket',
+})
+
+vegnettClient.setConfig({
+  ...commonConfig,
+  baseUrl: 'https://nvdbapiles.atlas.vegvesen.no/vegnett',
 })

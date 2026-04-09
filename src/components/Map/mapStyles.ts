@@ -121,3 +121,15 @@ export const EGENGEOMETRI_POLYGON_STYLE = new Style({
   fill: new Fill({ color: 'rgba(155, 89, 182, 0.3)' }),
   stroke: new Stroke({ color: '#8e44ad', width: 2 }),
 })
+
+export const POSISJON_VEGLENKE_STYLE = new Style({
+  stroke: new Stroke({ color: '#27ae60', width: 5 }),
+})
+
+export const POSISJON_POINT_STYLE = new Style({
+  image: new CircleStyle({
+    radius: 8,
+    fill: new Fill({ color: 'rgba(39, 174, 96, 0.9)' }),
+    stroke: new Stroke({ color: '#1e8449', width: 2 }),
+  }),
+})

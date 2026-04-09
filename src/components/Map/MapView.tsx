@@ -1,8 +1,9 @@
 import { useAtom, useAtomValue } from 'jotai'
-import { Ruler, Settings } from 'lucide-react'
+import { MapPin, Ruler, Settings } from 'lucide-react'
 import ScaleLine from 'ol/control/ScaleLine'
 import { click } from 'ol/events/condition'
 import Feature from 'ol/Feature'
+import WKT from 'ol/format/WKT'
 import type { LineString, Polygon } from 'ol/geom'
 import type ImageTile from 'ol/ImageTile'
 import { Draw, Select } from 'ol/interaction'
@@ -21,7 +22,10 @@ import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style'
 import TileGrid from 'ol/tilegrid/TileGrid'
 import WMTSTileGrid from 'ol/tilegrid/WMTS'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { PosisjonMedAvstand } from '../../api/generated/vegnett'
 import type { VeglenkesekvensMedPosisjoner, Vegobjekt } from '../../api/uberiketClient'
+import { hentVeglenkesekvenser } from '../../api/uberiketClient'
+import { hentVegnettPosisjon } from '../../api/vegnettPosisjonClient'
 import { getBaatToken, useBaatToken } from '../../hooks/useBaatToken'
 import { useHighlightRendering } from '../../hooks/useHighlightRendering'
 import { useLocateVegobjekt } from '../../hooks/useLocateVegobjekt'
@@ -66,10 +70,13 @@ import {
   HIGHLIGHT_POINT_STYLE,
   HIGHLIGHT_STYLE,
   normalizeToHexColor,
+  POSISJON_POINT_STYLE,
+  POSISJON_VEGLENKE_STYLE,
   STEDFESTING_POINT_STYLE,
 } from './mapStyles'
 import SearchControls from './SearchControls'
 import VeglenkePopup from './VeglenkePopup'
+import VegnettPosisjonPopup from './VegnettPosisjonPopup'
 
 ensureProjections()
 
@@ -116,8 +123,17 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
   const measureSource = useRef(new VectorSource())
   const measureInteraction = useRef<Draw | null>(null)
   const measureOverlays = useRef<Overlay[]>([])
+  const posisjonVeglenkeSource = useRef(new VectorSource())
+  const posisjonOverlayRef = useRef<Overlay | null>(null)
+  const posisjonPopupRef = useRef<HTMLDivElement>(null)
+  const posisjonAbortRef = useRef<AbortController | null>(null)
+  const isPosisjonModeRef = useRef(false)
   const [isDrawing, setIsDrawing] = useState(false)
   const [isMeasuring, setIsMeasuring] = useState(false)
+  const [isPosisjonMode, setIsPosisjonMode] = useState(false)
+  const [posisjonResults, setPosisjonResults] = useState<PosisjonMedAvstand[] | null>(null)
+  const [posisjonLoading, setPosisjonLoading] = useState(false)
+  const [posisjonError, setPosisjonError] = useState<string | null>(null)
   const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null)
   const [searchDateDraft, setSearchDateDraft] = useState(searchDate)
   const referenceDate = searchDateEnabled && searchDate ? searchDate : getTodayDate()
@@ -233,11 +249,23 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
       zIndex: 101,
     })
 
+    const posisjonVeglenkeLayer = new VectorLayer({
+      source: posisjonVeglenkeSource.current,
+      style: (feature) => (feature.getGeometry()?.getType() === 'Point' ? POSISJON_POINT_STYLE : POSISJON_VEGLENKE_STYLE),
+      zIndex: 99,
+    })
+
     const overlay = new Overlay({
       element: popupRef.current ?? undefined,
       autoPan: { animation: { duration: 250 } },
     })
     overlayRef.current = overlay
+
+    const posisjonOverlay = new Overlay({
+      element: posisjonPopupRef.current ?? undefined,
+      autoPan: { animation: { duration: 250 } },
+    })
+    posisjonOverlayRef.current = posisjonOverlay
 
     const geodataTileGrid = new TileGrid({
       extent: [...MAP_EXTENT],
@@ -287,8 +315,19 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
 
     const map = new OLMap({
       target: mapRef.current,
-      layers: [geodataLayer, kartverketLayer, drawLayer, veglenkeLayer, stedfestingLayer, highlightLayer, egengeometriLayer, selectedLayer, measureLayer],
-      overlays: [overlay],
+      layers: [
+        geodataLayer,
+        kartverketLayer,
+        drawLayer,
+        veglenkeLayer,
+        stedfestingLayer,
+        highlightLayer,
+        egengeometriLayer,
+        posisjonVeglenkeLayer,
+        selectedLayer,
+        measureLayer,
+      ],
+      overlays: [overlay, posisjonOverlay],
       view: new View({
         projection: MAP_PROJECTION,
         resolutions: KARTVERKET_WMTS_RESOLUTIONS,
@@ -353,7 +392,76 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
         },
         hitTolerance: 10,
       })
-      map.getTargetElement().style.cursor = hit ? 'pointer' : ''
+      map.getTargetElement().style.cursor = isPosisjonModeRef.current ? 'crosshair' : hit ? 'pointer' : ''
+    })
+
+    map.on('singleclick', async (e) => {
+      if (!isPosisjonModeRef.current) return
+
+      posisjonAbortRef.current?.abort()
+      const abort = new AbortController()
+      posisjonAbortRef.current = abort
+
+      const coordinate = e.coordinate
+      posisjonOverlayRef.current?.setPosition(coordinate)
+      setPosisjonLoading(true)
+      setPosisjonResults(null)
+      setPosisjonError(null)
+      posisjonVeglenkeSource.current.clear()
+
+      const [ost = 0, nord = 0] = coordinate
+
+      try {
+        const results = await hentVegnettPosisjon(nord, ost)
+        if (abort.signal.aborted) return
+
+        setPosisjonResults(results)
+
+        if (results.length > 0) {
+          const ids = [...new Set(results.map((r) => r.veglenkesekvens.veglenkesekvensid))]
+          const vsResult = await hentVeglenkesekvenser({ ider: ids, antall: ids.length })
+          if (abort.signal.aborted) return
+
+          const wktFormat = new WKT()
+          for (const vs of vsResult.veglenkesekvenser ?? []) {
+            for (const vl of vs.veglenker ?? []) {
+              if (!vl.geometri?.wkt) continue
+              try {
+                const geom = wktFormat.readGeometry(vl.geometri.wkt, {
+                  dataProjection: `EPSG:${vl.geometri.srid}`,
+                  featureProjection: 'EPSG:25833',
+                })
+                posisjonVeglenkeSource.current.addFeature(new Feature({ geometry: geom, veglenkesekvensId: vs.id }))
+              } catch {
+                // ignore invalid geometry
+              }
+            }
+          }
+
+          // Snap point from first result
+          const firstResult = results[0]
+          if (firstResult?.geometri?.wkt) {
+            try {
+              const wktFormat2 = new WKT()
+              const snapGeom = wktFormat2.readGeometry(firstResult.geometri.wkt, {
+                dataProjection: `EPSG:${firstResult.geometri.srid}`,
+                featureProjection: 'EPSG:25833',
+              })
+              posisjonVeglenkeSource.current.addFeature(new Feature({ geometry: snapGeom }))
+            } catch {
+              // ignore
+            }
+          }
+        }
+      } catch (err) {
+        if (abort.signal.aborted) return
+        console.error('Posisjon-oppslag feilet:', err)
+        setPosisjonError('Posisjon-oppslag feilet')
+      } finally {
+        if (!abort.signal.aborted) {
+          setPosisjonLoading(false)
+        }
+      }
     })
 
     let updateUrlTimeout: ReturnType<typeof setTimeout> | null = null
@@ -420,6 +528,24 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
     const feature = new Feature({ geometry: polygon })
     drawSource.current.addFeature(feature)
   }, [polygon, searchMode])
+
+  useEffect(() => {
+    isPosisjonModeRef.current = isPosisjonMode
+    if (isPosisjonMode) {
+      selectInteraction.current?.setActive(false)
+      selectedSource.current.clear()
+      setSelectedFeature(null)
+      overlayRef.current?.setPosition(undefined)
+    } else {
+      selectInteraction.current?.setActive(true)
+      posisjonAbortRef.current?.abort()
+      setPosisjonResults(null)
+      setPosisjonLoading(false)
+      setPosisjonError(null)
+      posisjonVeglenkeSource.current.clear()
+      posisjonOverlayRef.current?.setPosition(undefined)
+    }
+  }, [isPosisjonMode])
 
   useVeglenkeRendering({
     veglenkesekvenser,
@@ -526,6 +652,7 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
   const startMeasuring = useCallback(() => {
     if (!mapInstance.current) return
 
+    setIsPosisjonMode(false)
     clearMeasure()
 
     const draw = new Draw({
@@ -697,6 +824,18 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
       <div className="map-tools" ref={settingsRef}>
         <button
           type="button"
+          className={`btn-icon ${isPosisjonMode ? 'btn-icon-active' : ''}`}
+          aria-label="Finn vegposisjon"
+          title="Finn vegposisjon (klikk i kart)"
+          onClick={() => {
+            if (isMeasuring) clearMeasure()
+            setIsPosisjonMode((prev) => !prev)
+          }}
+        >
+          <MapPin size={20} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
           className={`btn-icon ${isMeasuring ? 'btn-icon-active' : ''}`}
           aria-label="Mål avstand"
           title="Mål avstand"
@@ -733,6 +872,7 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
       </div>
 
       <VeglenkePopup selectedFeature={selectedFeature} vegobjekterByType={vegobjekterByType} popupRef={popupRef} />
+      <VegnettPosisjonPopup results={posisjonResults} loading={posisjonLoading} error={posisjonError} popupRef={posisjonPopupRef} />
     </>
   )
 }

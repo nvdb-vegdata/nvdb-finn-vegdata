@@ -1,0 +1,3475 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "NVDB API Les Vegnett",
+    "description": "Dette API-et brukes til å lese vegnettelementer.<br><br>[Dokumentasjon for Vegnett API](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/Vegnett)",
+    "contact": {
+      "name": "Nasjonal vegdatabank (NVDB)",
+      "url": "https://nvdb.no/",
+      "email": "nvdb@vegvesen.no"
+    },
+    "license": {
+      "name": "NLOD 1.0",
+      "url": "https://data.norge.no/nlod/no/1.0"
+    },
+    "version": "v4"
+  },
+  "servers": [
+    {
+      "url": "/vegnett",
+      "description": "Default Server URL"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Statistikk",
+      "description": "API for lesing av statistikk for vegnett"
+    },
+    {
+      "name": "Noder",
+      "description": "API for lesing av noder"
+    },
+    {
+      "name": "Vegnett",
+      "description": "API for lesing av veglenkesekvenser"
+    },
+    {
+      "name": "Posisjon",
+      "description": "API for oppslag av posisjoner på vegnettet"
+    },
+    {
+      "name": "Rute",
+      "description": "API for ruteberegning (beta)"
+    }
+  ],
+  "paths": {
+    "/api/v4/beta/vegnett/rute": {
+      "get": {
+        "tags": ["Rute"],
+        "operationId": "getRute",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Startposisjon som et punkt eller posisjon@veglenkesekvens.\n\nEksempler:\n`226761.786, 6564469.3787`\n`0.1@1234`",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "slutt",
+            "in": "query",
+            "description": "Sluttposisjon som et punkt eller posisjon@veglenkesekvens.\n\nEksempler:\n`226855.034, 6564472.225`\n`0.9@4321`",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "geometri",
+            "in": "query",
+            "description": "Finn sammenhengende vegnett som passer med denne geometrien.\n\nEksempel: `LINESTRING Z (226778.2 6564468.6 5, 226747.1 6564470.1 5, 226717.5 6564466.4 5, 226705.9 6564462.7 6.2, 226687.2 6564462.9 6, 226657.7 6564460.7 6, 226628.5 6564459.5 6, 226611.3 6564459.6 6.2)`",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "maks_avstand",
+            "in": "query",
+            "description": "Maks avstand i meter til veglenker.\n\nStandardverdi: `10`",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "linje_geometri",
+            "in": "query",
+            "description": "Linjegeometri i WKT-format som definerer søkekorridoren mellom start og slutt. Kan ikke kombineres med `geometri`.\n\nEksempel: `LINESTRING(270000 7040000, 270500 7040500, 271000 7041000)`",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "omkrets",
+            "in": "query",
+            "description": "Konvolutt lagt rundt start- og slutt-punkt for å beregne rute.\n\nStandardverdi: `200`. Maksverdi: `15000`. Må være større enn 0.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "konnekteringslenker",
+            "in": "query",
+            "description": "Inkluder konnekteringslenker.\n\nStandardverdi: `true`",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "detaljerte_lenker",
+            "in": "query",
+            "description": "Inkluder detaljerte lenker.\n\nStandardverdi: `false`",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "kortform",
+            "in": "query",
+            "description": "Returner minimal respons.\n\nStandardverdi: `false`",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "vegsystemreferanse",
+            "in": "query",
+            "description": "Filtrer på vegsystemreferanse. Kommaseparert liste.\n\nEksempler:\n`EV6`\n`R`\n`F`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "trafikantgruppe",
+            "in": "query",
+            "description": "Filtrer på trafikantgruppe.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Trafikantgruppe"
+            }
+          },
+          {
+            "name": "behold_trafikantgruppe",
+            "in": "query",
+            "description": "Behold trafikantgruppe gjennom ruten. Trafikantgruppe velges fra første og siste punkt i ruten, om de er ulike velges K (kjørende). Overstyres av parameteren trafikantgruppe.\n\nStandardverdi: `false`",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "typeveg",
+            "in": "query",
+            "description": "Filtrer på type veg. Kommaseparert liste.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TypeVeg"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "tidspunkt",
+            "in": "query",
+            "description": "Begrens spørring til dette tidspunktet.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "srid",
+            "in": "query",
+            "description": "Angir hvilket geografisk referansesystem geometrien skal returneres i. Utdata i UTM-formater begrenses til 3 desimaler, 4326/WGS84 begrenses til 8 desimaler. Query-parametere med koordinater oppgis i UTM33 for UTM-formater, 4326/WGS84 oppgis dersom srid er 4326/WGS84. Mer informasjon: <a href='https://epsg.io/5972'>EPSG:5972</a> <a href='https://epsg.io/5973'>EPSG:5973</a> <a href='https://epsg.io/5975'>EPSG:5975</a> <a href='https://epsg.io/4326'>EPSG:4326</a>.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SridParameter"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuteResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Rute"],
+        "operationId": "postRute",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinnRuteParameters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/veglenkesekvenser": {
+      "get": {
+        "tags": ["Vegnett"],
+        "summary": "Hent veglenkesekvenser",
+        "operationId": "getVeglenkesekvenser",
+        "parameters": [
+          {
+            "name": "ider",
+            "in": "query",
+            "description": "Kommaseparert liste med IDer.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "fylke",
+            "in": "query",
+            "description": "Filtrer på fylke. Kommaseparert liste. Se [/omrader/api/v4/fylker](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getFylker) for mulige verdier.\n\nEksempel: `50`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "kommune",
+            "in": "query",
+            "description": "Filtrer på kommune. Kommaseparert liste. Se [/omrader/api/v4/kommuner](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getKommuner) for mulige verdier.\n\nEksempel: `5001`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "kontraktsomrade",
+            "in": "query",
+            "description": "Filtrer på kontraktsomrade. Kommaseparert liste. Se [/omrader/api/v4/kontraktsomrader](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getKontraktsomrader) for mulige verdier.\n\nEksempel: `9503 Midtre Hålogaland 2021-2026`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "riksvegrute",
+            "in": "query",
+            "description": "Filtrer på riksvegrute. Kommaseparert liste. Se [/omrader/api/v4/riksvegruter](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getRiksvegruter) for mulige verdier.\n\nEksempel: `RUTE4A` eller som enumid `20290`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "vegsystemreferanse",
+            "in": "query",
+            "description": "Filtrer på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for å filtrere på område.\n\nEksempel: `EV6S1D1 m12`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "topologiniva",
+            "in": "query",
+            "description": "Hent kun elementer på det gitte topologinivået. - Dersom en veglenke har nivå vegtrasé er ofte feltet for topologinivå ikke tilstede. Man vil da få alle veglenker som ikke har verdi `kjørefelt` eller `kjørebane`.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/TopologinivaParameter"
+            }
+          },
+          {
+            "name": "superid",
+            "in": "query",
+            "description": "Hent detaljerte veglenkesekvenser stedfestet på veglenkesekvens med denne IDen.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "srid",
+            "in": "query",
+            "description": "Angir hvilket geografisk referansesystem geometrien skal returneres i. Utdata i UTM-formater begrenses til 3 desimaler, 4326/WGS84 begrenses til 8 desimaler. Query-parametere med koordinater oppgis i UTM33 for UTM-formater, 4326/WGS84 oppgis dersom srid er 4326/WGS84. Mer informasjon: <a href='https://epsg.io/5972'>EPSG:5972</a> <a href='https://epsg.io/5973'>EPSG:5973</a> <a href='https://epsg.io/5975'>EPSG:5975</a> <a href='https://epsg.io/4326'>EPSG:4326</a>.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SridParameter"
+            }
+          },
+          {
+            "name": "polygon",
+            "in": "query",
+            "description": "Filtrer med polygon i UTM 33.\n\nEksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "antall",
+            "in": "query",
+            "description": "Angir hvor mange objekter som skal returneres. Se også `sidestørrelse` i responsens `metadata`-objekt.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Angir paginerings-start for objekter som skal returneres. Brukes sammen med `antall`. Neste start får man i metadata-feltet i responsen. Settes blankt for å starte fra begynnelsen.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "inkluderAntall",
+            "in": "query",
+            "description": "Hvorvidt totalt antall objekter skal returneres i responsen. Default er `false`.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VeglenkesekvenserSide"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/veglenkesekvenser/{veglenkesekvensId}": {
+      "get": {
+        "tags": ["Vegnett"],
+        "summary": "Hent en veglenkesekvens",
+        "operationId": "getVeglenkesekvens",
+        "parameters": [
+          {
+            "name": "veglenkesekvensId",
+            "in": "path",
+            "description": "ID for veglenkesekvensen.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "srid",
+            "in": "query",
+            "description": "Angir hvilket geografisk referansesystem geometrien skal returneres i. Utdata i UTM-formater begrenses til 3 desimaler, 4326/WGS84 begrenses til 8 desimaler. Query-parametere med koordinater oppgis i UTM33 for UTM-formater, 4326/WGS84 oppgis dersom srid er 4326/WGS84. Mer informasjon: <a href='https://epsg.io/5972'>EPSG:5972</a> <a href='https://epsg.io/5973'>EPSG:5973</a> <a href='https://epsg.io/5975'>EPSG:5975</a> <a href='https://epsg.io/4326'>EPSG:4326</a>.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SridParameter"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Veglenkesekvens"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/veglenkesekvenser/segmentert": {
+      "get": {
+        "tags": ["Vegnett"],
+        "summary": "Hent segmenterte veglenkesekvenser",
+        "operationId": "getVeglenkesegmenter",
+        "parameters": [
+          {
+            "name": "srid",
+            "in": "query",
+            "description": "Angir hvilket geografisk referansesystem geometrien skal returneres i. Utdata i UTM-formater begrenses til 3 desimaler, 4326/WGS84 begrenses til 8 desimaler. Query-parametere med koordinater oppgis i UTM33 for UTM-formater, 4326/WGS84 oppgis dersom srid er 4326/WGS84. Mer informasjon: <a href='https://epsg.io/5972'>EPSG:5972</a> <a href='https://epsg.io/5973'>EPSG:5973</a> <a href='https://epsg.io/5975'>EPSG:5975</a> <a href='https://epsg.io/4326'>EPSG:4326</a>.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SridParameter"
+            }
+          },
+          {
+            "name": "ider",
+            "in": "query",
+            "description": "Kommaseparert liste med IDer.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "fylke",
+            "in": "query",
+            "description": "Filtrer på fylke. Kommaseparert liste. Se [/omrader/api/v4/fylker](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getFylker) for mulige verdier.\n\nEksempel: `50`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "kommune",
+            "in": "query",
+            "description": "Filtrer på kommune. Kommaseparert liste. Se [/omrader/api/v4/kommuner](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getKommuner) for mulige verdier.\n\nEksempel: `5001`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "kontraktsomrade",
+            "in": "query",
+            "description": "Filtrer på kontraktsomrade. Kommaseparert liste. Se [/omrader/api/v4/kontraktsomrader](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getKontraktsomrader) for mulige verdier.\n\nEksempel: `9503 Midtre Hålogaland 2021-2026`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "riksvegrute",
+            "in": "query",
+            "description": "Filtrer på riksvegrute. Kommaseparert liste. Se [/omrader/api/v4/riksvegruter](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getRiksvegruter) for mulige verdier.\n\nEksempel: `RUTE4A` eller som enumid `20290`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "vegforvalter",
+            "in": "query",
+            "description": "Filtrer på vegforvalter. Kommaseparert liste. Se [/omrader/api/v4/vegforvaltere](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getVegforvaltere) for mulige verdier.\n\nEksempel: `Møre og Romsdal fylkeskommune` eller som enumid `21774`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "vegsystemreferanse",
+            "in": "query",
+            "description": "Filtrer på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for å filtrere på område.\n\nEksempel: `EV6S1D1 m12`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "veglenkesekvens",
+            "in": "query",
+            "description": "Filtrer på relativ posisjon på veglenkesekvens. Kan være punkt eller utstrekning. Kommaseparert liste.\n\nEksempel: `0.37@319531,0.83-0.97@41640`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "kartutsnitt",
+            "in": "query",
+            "description": "Filtrer med kartutsnitt i UTM 33. Formatet er `minX, minY, maxX, maxY`.\n\nEksempel: `265273, 7019372, 346553, 7061071`",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "polygon",
+            "in": "query",
+            "description": "Filtrer med polygon i UTM 33.\n\nEksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "detaljniva",
+            "in": "query",
+            "description": "Filtrer på veglenkens detaljnivå (kortnavn fra datakatalogen). Kommaseparert liste.\n\n\nEksempel: `VT,VTKB`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/DetaljnivaParameter"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "typeveg",
+            "in": "query",
+            "description": "Filtrer veglenker på type veg. Kommaseparert liste.\n\nEksempel: `kanalisertVeg, enkelBilveg, rampe, rundkjøring, bilferje, passasjerferje, gangOgSykkelveg, sykkelveg, gangveg, gågate, fortau, trapp, gangfelt, gatetun, traktorveg, sti, annet`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TypeVegSosi"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "superid",
+            "in": "query",
+            "description": "Hent detaljerte veglenkesegmenter stedfestet på veglenkesekvens med denne IDen.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "adskiltelop",
+            "in": "query",
+            "description": "Filtrer på om veglenkesegmentene er stedfestet hvor det er en Strekning med verdi satt for «adskilte løp».",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/AdskilteLop"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "kryssystem",
+            "in": "query",
+            "description": "Filtrer på om de er stedfestet på samme sted hvor det er et Kryssystem.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sideanlegg",
+            "in": "query",
+            "description": "Filtrer på om de er stedfestet på samme sted hvor det er et Sideanlegg.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "veglenketype",
+            "in": "query",
+            "description": "Filtrer på veglenken sin veglenketype. Kommaseparert liste.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/VeglenketypeParameter"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "arm",
+            "in": "query",
+            "description": "Filtrer veglenker på om de er stedfestet på en Strekning med verdi satt for «arm».",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "trafikantgruppe",
+            "in": "query",
+            "description": "Filtrer på trafikantgruppe.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Trafikantgruppe"
+            }
+          },
+          {
+            "name": "geometritoleranse",
+            "in": "query",
+            "description": "Angir om det skal returneres en forenklet geometri. Dersom parameteren utelates, returneres full geometri. Nummeret angir distansetoleranse i meter for generering av forenklet geometri.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "historisk",
+            "in": "query",
+            "description": "For `false` returneres kun dagens veglenkesegmenter. For `true` returneres dagens og historiske veglenkesegmenter. Default er `false`.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "tidspunkt",
+            "in": "query",
+            "description": "Begrens spørring til det gitte tidspunktet.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "antall",
+            "in": "query",
+            "description": "Angir hvor mange objekter som skal returneres. Se også `sidestørrelse` i responsens `metadata`-objekt.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Angir paginerings-start for objekter som skal returneres. Brukes sammen med `antall`. Neste start får man i metadata-feltet i responsen. Settes blankt for å starte fra begynnelsen.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "inkluderAntall",
+            "in": "query",
+            "description": "Hvorvidt totalt antall objekter skal returneres i responsen. Default er `false`.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VeglenkesegmenterSide"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/veglenkesekvenser/segmentert/{veglenkesekvensId}": {
+      "get": {
+        "tags": ["Vegnett"],
+        "summary": "Hent en segmentert veglenkesekvens",
+        "operationId": "getSegmentertVeglenkesekvens",
+        "parameters": [
+          {
+            "name": "veglenkesekvensId",
+            "in": "path",
+            "description": "ID for veglenkesekvensen.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "srid",
+            "in": "query",
+            "description": "Angir hvilket geografisk referansesystem geometrien skal returneres i. Utdata i UTM-formater begrenses til 3 desimaler, 4326/WGS84 begrenses til 8 desimaler. Query-parametere med koordinater oppgis i UTM33 for UTM-formater, 4326/WGS84 oppgis dersom srid er 4326/WGS84. Mer informasjon: <a href='https://epsg.io/5972'>EPSG:5972</a> <a href='https://epsg.io/5973'>EPSG:5973</a> <a href='https://epsg.io/5975'>EPSG:5975</a> <a href='https://epsg.io/4326'>EPSG:4326</a>.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SridParameter"
+            }
+          },
+          {
+            "name": "historisk",
+            "in": "query",
+            "description": "For `false` returneres kun dagens veglenkesegmenter. For `true` returneres dagens og historiske veglenkesegmenter. Default er `false`.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "tidspunkt",
+            "in": "query",
+            "description": "Begrens spørring til det gitte tidspunktet.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Veglenkesegment"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/veglenkesekvenser/segmentert/statistikk": {
+      "get": {
+        "tags": ["Statistikk"],
+        "summary": "Hent statistikk for det aktive segmenterte vegnettet",
+        "operationId": "getVeglenkesegmenterStatistikk",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VeglenkesegmenterStatistikk"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/veglenkesekvenser/segmentert/statistikk/gruppert": {
+      "get": {
+        "tags": ["Statistikk"],
+        "summary": "Hent statistikk for segmentert vegnett, gruppert på en eller flere felter",
+        "operationId": "getVeglenkesegmenterStatistikkGruppert",
+        "parameters": [
+          {
+            "name": "srid",
+            "in": "query",
+            "description": "Angir hvilket geografisk referansesystem geometrien skal returneres i. Utdata i UTM-formater begrenses til 3 desimaler, 4326/WGS84 begrenses til 8 desimaler. Query-parametere med koordinater oppgis i UTM33 for UTM-formater, 4326/WGS84 oppgis dersom srid er 4326/WGS84. Mer informasjon: <a href='https://epsg.io/5972'>EPSG:5972</a> <a href='https://epsg.io/5973'>EPSG:5973</a> <a href='https://epsg.io/5975'>EPSG:5975</a> <a href='https://epsg.io/4326'>EPSG:4326</a>.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SridParameter"
+            }
+          },
+          {
+            "name": "kartutsnitt",
+            "in": "query",
+            "description": "Filtrer med kartutsnitt i UTM 33. Formatet er `minX, minY, maxX, maxY`.\n\nEksempel: `265273, 7019372, 346553, 7061071`",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gruppering",
+            "in": "query",
+            "description": "Velg en eller flere felter som statistikken skal grupperes på.",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Gruppering"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VeglenkesegmenterStatistikkGruppert"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/veglenkesekvenser/endringer": {
+      "get": {
+        "tags": ["Vegnett"],
+        "summary": "Hent endringer på veglenkesekvenser innen siste 30 dager",
+        "description": "Dette endepunktet publiserer bare endringer for det berikede API-et, blant annet segmenteringsendringer. Hvis du er interessert i andre endringer, som opprettelse og sletting av veglenkesekvenser, bruk [/hendelser-endepunktene](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Uberiket+API#/Hendelser) i det uberikede APIet",
+        "operationId": "getVeglenkesekvensEndringer",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Hent alle endringer etter gitt tidspunkt. Dersom denne utelates vil de eldste endringene hentes først.\n\nFormat kan være dato (`2025-06-01`) eller tidspunkt med tidssone (`2025-06-01T12:00:00Z` eller `2025-06-01T14:00:00+02:00`). For paginering vil det bli lagt ved siste veglenkesekvens innen siste tidspunkt i responsen, i tilfelle flere endringer har skjedd på samme tidspunkt. Format for dette er `2025-06-01T12:00:00Z,12345` hvor `12345` er IDen til veglenkesekvensen.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "antall",
+            "in": "query",
+            "description": "Antall endringer som skal være med i responsen. Merk at det faktiske antallet kan variere fra respons til respons. Dette er fordi endringer på samme veglenkesekvens innenfor samme side blir aggregert sammen ved å ta den nyeste endringen.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "slutt",
+            "in": "query",
+            "description": "Hent alle endringer før gitt tidspunkt. Dersom denne utelates vil alle endringer hentes.\n\nFormat kan være dato (`2025-06-01`) eller tidspunkt med tidssone (`2025-06-01T12:00:00Z` eller `2025-06-01T14:00:00+02:00`).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ider",
+            "in": "query",
+            "description": "Hent endringer for oppgitte veglenkesekvens IDer. Dersom denne utelates vil alle endringer hentes.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "fylke",
+            "in": "query",
+            "description": "Filtrer på fylke. Kommaseparert liste. Se [/omrader/api/v4/fylker](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getFylker) for mulige verdier.\n\nEksempel: `50`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "kommune",
+            "in": "query",
+            "description": "Filtrer på kommune. Kommaseparert liste. Se [/omrader/api/v4/kommuner](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getKommuner) for mulige verdier.\n\nEksempel: `5001`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "uniqueItems": true
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VeglenkesekvensEndringerSide"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/veg": {
+      "get": {
+        "tags": ["Posisjon"],
+        "summary": "Slå opp posisjon på veglenkesekvens eller vegsystemreferanse",
+        "operationId": "findPosisjonForVeg",
+        "parameters": [
+          {
+            "name": "vegsystemreferanse",
+            "in": "query",
+            "description": "Finn posisjon for [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Må inneholde én enkelt meterverdi. Legg til kommunenummer i starten av vegsystemreferansen for å filtrere på område.\n\nEksempel: `EV6S1D1m341`",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "veglenkesekvens",
+            "in": "query",
+            "description": "Finn posisjon på veglenkesekvens. Format: `posisjon@veglenkesekvensid`.\n\nEksempel: `0.456@1226`",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tidspunkt",
+            "in": "query",
+            "description": "Begrens spørring til det gitte tidspunktet.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "srid",
+            "in": "query",
+            "description": "Angir hvilket geografisk referansesystem geometrien skal returneres i. Utdata i UTM-formater begrenses til 3 desimaler, 4326/WGS84 begrenses til 8 desimaler. Query-parametere med koordinater oppgis i UTM33 for UTM-formater, 4326/WGS84 oppgis dersom srid er 4326/WGS84. Mer informasjon: <a href='https://epsg.io/5972'>EPSG:5972</a> <a href='https://epsg.io/5973'>EPSG:5973</a> <a href='https://epsg.io/5975'>EPSG:5975</a> <a href='https://epsg.io/4326'>EPSG:4326</a>.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SridParameter"
+            }
+          },
+          {
+            "name": "kommune",
+            "in": "query",
+            "description": "Filtrer på kommune. Kommaseparert liste. Se [/omrader/api/v4/kommuner](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getKommuner) for mulige verdier.\n\nEksempel: `5001`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "uniqueItems": true
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Posisjon"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/veg/batch": {
+      "get": {
+        "tags": ["Posisjon"],
+        "summary": "Slå opp flere posisjoner på veglenkesekvens eller vegsystemreferanse",
+        "operationId": "findPosisjonerForVeg",
+        "parameters": [
+          {
+            "name": "vegsystemreferanser",
+            "in": "query",
+            "description": "Finn posisjoner for [vegsystemreferanser](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Må inneholde én enkelt meterverdi. Legg til kommunenummer i starten av vegsystemreferansen for å filtrere på område.\n\nEksempel: `EV6S1D1m341`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "veglenkesekvenser",
+            "in": "query",
+            "description": "Finn posisjoner på veglenkesekvenser. Format: `posisjon@veglenkesekvensid`.\n\nEksempel: `0.456@1226`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "kommune",
+            "in": "query",
+            "description": "Filtrer på kommune. Kommaseparert liste. Se [/omrader/api/v4/kommuner](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getKommuner) for mulige verdier.\n\nEksempel: `5001`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "srid",
+            "in": "query",
+            "description": "Angir hvilket geografisk referansesystem geometrien skal returneres i. Utdata i UTM-formater begrenses til 3 desimaler, 4326/WGS84 begrenses til 8 desimaler. Query-parametere med koordinater oppgis i UTM33 for UTM-formater, 4326/WGS84 oppgis dersom srid er 4326/WGS84. Mer informasjon: <a href='https://epsg.io/5972'>EPSG:5972</a> <a href='https://epsg.io/5973'>EPSG:5973</a> <a href='https://epsg.io/5975'>EPSG:5975</a> <a href='https://epsg.io/4326'>EPSG:4326</a>.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SridParameter"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlwaysIncludeMapStringPosisjon"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/posisjon": {
+      "get": {
+        "tags": ["Posisjon"],
+        "summary": "Finn nærmeste posisjon på vegnettet for gitte koordinater. Koordinater kan angis som `nord` og `ost` eller `lat` og `lon`.",
+        "operationId": "findPosisjon",
+        "parameters": [
+          {
+            "name": "nord",
+            "in": "query",
+            "description": "Nordlig koordinat",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "ost",
+            "in": "query",
+            "description": "Østlig koordinat",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "lat",
+            "in": "query",
+            "description": "Breddegrad",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "lon",
+            "in": "query",
+            "description": "Lengdegrad",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "maks_avstand",
+            "in": "query",
+            "description": "Angir søkeavstand i meter",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "maks_antall",
+            "in": "query",
+            "description": "Angir maks antall treff",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "konnekteringslenker",
+            "in": "query",
+            "description": "Angir om det skal returneres treff på konnekteringslenker",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "detaljerte_lenker",
+            "in": "query",
+            "description": "Angir om det skal returneres treff på detaljerte lenker",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "tidspunkt",
+            "in": "query",
+            "description": "Begrens spørring til det gitte tidspunktet.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "vegsystemreferanse",
+            "in": "query",
+            "description": "Filtrer på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for å filtrere på område.\n\nEksempel: `EV6S1D1 m12`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "srid",
+            "in": "query",
+            "description": "Angir hvilket geografisk referansesystem geometrien skal returneres i. Utdata i UTM-formater begrenses til 3 desimaler, 4326/WGS84 begrenses til 8 desimaler. Query-parametere med koordinater oppgis i UTM33 for UTM-formater, 4326/WGS84 oppgis dersom srid er 4326/WGS84. Mer informasjon: <a href='https://epsg.io/5972'>EPSG:5972</a> <a href='https://epsg.io/5973'>EPSG:5973</a> <a href='https://epsg.io/5975'>EPSG:5975</a> <a href='https://epsg.io/4326'>EPSG:4326</a>.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SridParameter"
+            }
+          },
+          {
+            "name": "trafikantgruppe",
+            "in": "query",
+            "description": "Filtrer på trafikantgruppe.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Trafikantgruppe"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PosisjonMedAvstand"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/noder": {
+      "get": {
+        "tags": ["Noder"],
+        "summary": "Hent noder",
+        "operationId": "getNoder",
+        "parameters": [
+          {
+            "name": "srid",
+            "in": "query",
+            "description": "Angir hvilket geografisk referansesystem geometrien skal returneres i. Utdata i UTM-formater begrenses til 3 desimaler, 4326/WGS84 begrenses til 8 desimaler. Query-parametere med koordinater oppgis i UTM33 for UTM-formater, 4326/WGS84 oppgis dersom srid er 4326/WGS84. Mer informasjon: <a href='https://epsg.io/5972'>EPSG:5972</a> <a href='https://epsg.io/5973'>EPSG:5973</a> <a href='https://epsg.io/5975'>EPSG:5975</a> <a href='https://epsg.io/4326'>EPSG:4326</a>.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SridParameter"
+            }
+          },
+          {
+            "name": "ider",
+            "in": "query",
+            "description": "Kommaseparert liste med IDer.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "fylke",
+            "in": "query",
+            "description": "Filtrer på fylke. Kommaseparert liste. Se [/omrader/api/v4/fylker](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getFylker) for mulige verdier.\n\nEksempel: `50`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "kommune",
+            "in": "query",
+            "description": "Filtrer på kommune. Kommaseparert liste. Se [/omrader/api/v4/kommuner](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getKommuner) for mulige verdier.\n\nEksempel: `5001`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "kontraktsomrade",
+            "in": "query",
+            "description": "Filtrer på kontraktsomrade. Kommaseparert liste. Se [/omrader/api/v4/kontraktsomrader](https://nvdbapiles.atlas.vegvesen.no/swagger-ui/index.html?urls.primaryName=Omr%C3%A5der#/Omr%C3%A5der/getKontraktsomrader) for mulige verdier.\n\nEksempel: `9503 Midtre Hålogaland 2021-2026`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "vegsystemreferanse",
+            "in": "query",
+            "description": "Filtrer på [vegsystemreferanse](https://nvdb-docs.atlas.vegvesen.no/nvdbapil/v4/introduksjon/Vegsystemreferanse). Kommaseparert liste. Legg til kommunenummer i starten av vegsystemreferansen for å filtrere på område.\n\nEksempel: `EV6S1D1 m12`",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          {
+            "name": "kartutsnitt",
+            "in": "query",
+            "description": "Filtrer med kartutsnitt i UTM 33. Formatet er `minX, minY, maxX, maxY`.\n\nEksempel: `265273, 7019372, 346553, 7061071`",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "polygon",
+            "in": "query",
+            "description": "Filtrer med polygon i UTM 33.\n\nEksempel: `20000 6520000, 20500 6520000, 21000 6500000, 20000 6520000`",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "superid",
+            "in": "query",
+            "description": "Hent noder tilkoblet detaljerte veglenker stedfestet på veglenkesekvens med denne IDen.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "antall",
+            "in": "query",
+            "description": "Angir hvor mange objekter som skal returneres. Se også `sidestørrelse` i responsens `metadata`-objekt.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Angir paginerings-start for objekter som skal returneres. Brukes sammen med `antall`. Neste start får man i metadata-feltet i responsen. Settes blankt for å starte fra begynnelsen.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "inkluderAntall",
+            "in": "query",
+            "description": "Hvorvidt totalt antall objekter skal returneres i responsen. Default er `false`.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NodeSide"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/noder/{id}": {
+      "get": {
+        "tags": ["Noder"],
+        "summary": "Hent en node",
+        "operationId": "getNode",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID for noden.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "srid",
+            "in": "query",
+            "description": "Angir hvilket geografisk referansesystem geometrien skal returneres i. Utdata i UTM-formater begrenses til 3 desimaler, 4326/WGS84 begrenses til 8 desimaler. Query-parametere med koordinater oppgis i UTM33 for UTM-formater, 4326/WGS84 oppgis dersom srid er 4326/WGS84. Mer informasjon: <a href='https://epsg.io/5972'>EPSG:5972</a> <a href='https://epsg.io/5973'>EPSG:5973</a> <a href='https://epsg.io/5975'>EPSG:5975</a> <a href='https://epsg.io/4326'>EPSG:4326</a>.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SridParameter"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Node"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProblemDetail": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": ["string", "null"]
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detail": {
+            "type": ["string", "null"]
+          },
+          "instance": {
+            "type": ["string", "null"],
+            "format": "uri"
+          },
+          "properties": {
+            "type": ["object", "null"],
+            "additionalProperties": {
+              "type": ["object", "null"]
+            }
+          }
+        }
+      },
+      "FinnRuteParameters": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string"
+          },
+          "slutt": {
+            "type": "string"
+          },
+          "geometri": {
+            "type": "string"
+          },
+          "maks_avstand": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "linje_geometri": {
+            "type": "string"
+          },
+          "omkrets": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "konnekteringslenker": {
+            "type": "boolean"
+          },
+          "detaljerte_lenker": {
+            "type": "boolean"
+          },
+          "kortform": {
+            "type": "boolean"
+          },
+          "vegsystemreferanse": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "trafikantgruppe": {
+            "$ref": "#/components/schemas/Trafikantgruppe"
+          },
+          "behold_trafikantgruppe": {
+            "type": "boolean"
+          },
+          "typeveg": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TypeVeg"
+            },
+            "uniqueItems": true
+          },
+          "tidspunkt": {
+            "type": "string",
+            "format": "date"
+          },
+          "srid": {
+            "$ref": "#/components/schemas/SridParameter"
+          }
+        },
+        "required": ["behold_trafikantgruppe", "detaljerte_lenker", "konnekteringslenker", "kortform", "maks_avstand", "omkrets"]
+      },
+      "SridParameter": {
+        "type": "string",
+        "enum": ["5972", "5973", "5975", "4326", "UTM32", "UTM33", "UTM35", "WGS84"]
+      },
+      "Trafikantgruppe": {
+        "type": "string",
+        "enum": ["K", "G"]
+      },
+      "TypeVeg": {
+        "type": "string",
+        "enum": [
+          "Enkel bilveg",
+          "Kanalisert veg",
+          "Rampe",
+          "Rundkjøring",
+          "Bilferje",
+          "Gang- og sykkelveg",
+          "Sykkelveg",
+          "Gangveg",
+          "Gågate",
+          "Fortau",
+          "Trapp",
+          "Gangfelt",
+          "Gatetun",
+          "Passasjerferje",
+          "Traktorveg",
+          "Sti",
+          "Annet"
+        ]
+      },
+      "Adresse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "navn": {
+            "type": "string"
+          },
+          "adressekode": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sideveg": {
+            "type": "boolean"
+          }
+        },
+        "required": ["adressekode", "id", "navn"]
+      },
+      "AdskilteLop": {
+        "type": "string",
+        "enum": ["Med", "Mot", "Nei"]
+      },
+      "Detaljniva": {
+        "type": "string",
+        "enum": ["Vegtrase", "Kjørebane", "Kjørefelt", "Vegtrase og kjørebane"]
+      },
+      "GeometriMedKvalitet": {
+        "type": "object",
+        "properties": {
+          "wkt": {
+            "type": "string"
+          },
+          "srid": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kvalitet": {
+            "$ref": "#/components/schemas/Kvalitet"
+          },
+          "datafangstdato": {
+            "type": "string",
+            "format": "date"
+          },
+          "oppdateringsdato": {
+            "type": "string",
+            "format": "date"
+          },
+          "verifiseringsdato": {
+            "type": "string",
+            "format": "date"
+          },
+          "kommune": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "temakode": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lengde": {
+            "type": "number",
+            "format": "double"
+          },
+          "medium": {
+            "$ref": "#/components/schemas/SosiMedium"
+          },
+          "medium_nvdb": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": ["datafangstdato", "kommune", "kvalitet", "lengde", "srid", "temakode", "wkt"]
+      },
+      "Kontraktsomrade": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nummer": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "navn": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "navn"]
+      },
+      "Kryssystem": {
+        "type": "object",
+        "properties": {
+          "kryssystem": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kryssdel": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "retning": {
+            "$ref": "#/components/schemas/Retning"
+          },
+          "trafikantgruppe": {
+            "$ref": "#/components/schemas/Trafikantgruppe"
+          },
+          "meter": {
+            "type": "number",
+            "format": "double"
+          },
+          "fra_meter": {
+            "type": "number",
+            "format": "double"
+          },
+          "til_meter": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": ["kryssdel", "kryssystem", "retning", "trafikantgruppe"]
+      },
+      "Kvalitet": {
+        "type": "object",
+        "properties": {
+          "datafangstmetode": {
+            "type": "string"
+          },
+          "nøyaktighet": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "datafangstmetodeHøyde": {
+            "type": "string"
+          },
+          "nøyaktighetHøyde": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maksimaltAvvik": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "synbarhet": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "Linje": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Segment"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "veglenkesekvensid": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "startposisjon": {
+                "type": "number",
+                "format": "double"
+              },
+              "sluttposisjon": {
+                "type": "number",
+                "format": "double"
+              },
+              "kortform": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "required": ["kortform", "sluttposisjon", "startposisjon", "veglenkesekvensid"]
+      },
+      "Malemetode": {
+        "type": "string",
+        "enum": ["Metrert", "Geometrisk"]
+      },
+      "Metadata": {
+        "type": "object",
+        "properties": {
+          "startdato": {
+            "type": "string",
+            "format": "date"
+          },
+          "sluttdato": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": ["startdato"]
+      },
+      "Punkt": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Segment"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "veglenkesekvensid": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "relativPosisjon": {
+                "type": "number",
+                "format": "double"
+              },
+              "kortform": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "required": ["kortform", "relativPosisjon", "veglenkesekvensid"]
+      },
+      "Retning": {
+        "type": "string",
+        "enum": ["MED", "MOT"]
+      },
+      "Riksvegrute": {
+        "type": "object",
+        "properties": {
+          "enumid": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "riksvegrute": {
+            "type": "string"
+          }
+        },
+        "required": ["enumid", "riksvegrute"]
+      },
+      "Rute": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RuteResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "vegnettsrutesegmenter": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Rutesegment"
+                }
+              },
+              "metadata": {
+                "$ref": "#/components/schemas/RuteMetadata"
+              }
+            }
+          }
+        ],
+        "required": ["metadata", "vegnettsrutesegmenter"]
+      },
+      "RuteKortform": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RuteResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "vegnettsrutesegmenter": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Segment"
+                }
+              },
+              "metadata": {
+                "$ref": "#/components/schemas/RuteMetadata"
+              }
+            }
+          }
+        ],
+        "required": ["metadata", "vegnettsrutesegmenter"]
+      },
+      "RuteMetadata": {
+        "type": "object",
+        "properties": {
+          "antall": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lengde": {
+            "type": "number",
+            "format": "double"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status_tekst": {
+            "type": "string"
+          }
+        },
+        "required": ["antall", "lengde", "status", "status_tekst"]
+      },
+      "RuteResponse": {
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Rute": "#/components/schemas/Rute",
+            "RuteKortform": "#/components/schemas/RuteKortform"
+          }
+        },
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": ["type"]
+      },
+      "Rutesegment": {
+        "type": "object",
+        "properties": {
+          "veglenkesekvensid": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "href": {
+            "type": "string"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata"
+          },
+          "startposisjon": {
+            "type": "number",
+            "format": "double"
+          },
+          "sluttposisjon": {
+            "type": "number",
+            "format": "double"
+          },
+          "kortform": {
+            "type": "string"
+          },
+          "veglenkenummer": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "segmentnummer": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "startnode": {
+            "type": "string"
+          },
+          "sluttnode": {
+            "type": "string"
+          },
+          "referanse": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/VeglenkeType"
+          },
+          "detaljnivå": {
+            "$ref": "#/components/schemas/Detaljniva"
+          },
+          "typeVeg": {
+            "$ref": "#/components/schemas/TypeVeg"
+          },
+          "typeVeg_sosi": {
+            "$ref": "#/components/schemas/TypeVegSosi"
+          },
+          "målemetode": {
+            "$ref": "#/components/schemas/Malemetode"
+          },
+          "måledato": {
+            "type": "string",
+            "format": "date"
+          },
+          "superstedfesting": {
+            "$ref": "#/components/schemas/Superstedfesting"
+          },
+          "feltoversikt": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "geometri": {
+            "$ref": "#/components/schemas/GeometriMedKvalitet"
+          },
+          "lengde": {
+            "type": "number",
+            "format": "double"
+          },
+          "fylke": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kommune": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "vegsystemreferanse": {
+            "$ref": "#/components/schemas/Vegsystemreferanse"
+          },
+          "kontraktsområder": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Kontraktsomrade"
+            }
+          },
+          "riksvegruter": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Riksvegrute"
+            }
+          },
+          "adresse": {
+            "$ref": "#/components/schemas/Adresse"
+          }
+        },
+        "required": [
+          "detaljnivå",
+          "fylke",
+          "geometri",
+          "href",
+          "kommune",
+          "kontraktsområder",
+          "kortform",
+          "lengde",
+          "metadata",
+          "målemetode",
+          "referanse",
+          "riksvegruter",
+          "segmentnummer",
+          "sluttposisjon",
+          "startposisjon",
+          "type",
+          "typeVeg",
+          "typeVeg_sosi",
+          "veglenkenummer",
+          "veglenkesekvensid",
+          "vegsystemreferanse"
+        ]
+      },
+      "Segment": {
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Linje": "#/components/schemas/Linje",
+            "Punkt": "#/components/schemas/Punkt"
+          }
+        },
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": ["type"]
+      },
+      "Sideanlegg": {
+        "type": "object",
+        "properties": {
+          "sideanlegg": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sideanleggsdel": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "retning": {
+            "$ref": "#/components/schemas/Retning"
+          },
+          "trafikantgruppe": {
+            "$ref": "#/components/schemas/Trafikantgruppe"
+          },
+          "meter": {
+            "type": "number",
+            "format": "double"
+          },
+          "fra_meter": {
+            "type": "number",
+            "format": "double"
+          },
+          "til_meter": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": ["retning", "sideanlegg", "sideanleggsdel", "trafikantgruppe"]
+      },
+      "Sideposisjon": {
+        "type": "string",
+        "enum": ["MH", "MV", "VT", "M", "H", "HT", "HV", "K", "V", "L", "R0"]
+      },
+      "SosiMedium": {
+        "type": "string",
+        "enum": ["T", "B", "L", "U", "S", "O", "V", "D", "I", "W", "J", "X", "IKKE_REGISTRERT"]
+      },
+      "Strekning": {
+        "type": "object",
+        "properties": {
+          "strekning": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "delstrekning": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "arm": {
+            "type": "boolean"
+          },
+          "adskilte_løp": {
+            "$ref": "#/components/schemas/AdskilteLop"
+          },
+          "trafikantgruppe": {
+            "$ref": "#/components/schemas/Trafikantgruppe"
+          },
+          "retning": {
+            "$ref": "#/components/schemas/Retning"
+          },
+          "meter": {
+            "type": "number",
+            "format": "double"
+          },
+          "fra_meter": {
+            "type": "number",
+            "format": "double"
+          },
+          "til_meter": {
+            "type": "number",
+            "format": "double"
+          },
+          "adskilte_løp_nummer": {
+            "type": "string"
+          }
+        },
+        "required": ["adskilte_løp", "arm", "delstrekning", "retning", "strekning", "trafikantgruppe"]
+      },
+      "Superstedfesting": {
+        "type": "object",
+        "properties": {
+          "veglenkesekvensid": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "startposisjon": {
+            "type": "number",
+            "format": "double"
+          },
+          "sluttposisjon": {
+            "type": "number",
+            "format": "double"
+          },
+          "retning": {
+            "$ref": "#/components/schemas/Retning"
+          },
+          "kjørefelt": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "kjørefeltMetrering": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sideposisjon": {
+            "$ref": "#/components/schemas/Sideposisjon"
+          }
+        },
+        "required": ["kjørefelt", "retning", "sluttposisjon", "startposisjon", "veglenkesekvensid"]
+      },
+      "TypeVegSosi": {
+        "type": "string",
+        "enum": [
+          "kanalisertVeg",
+          "enkelBilveg",
+          "rampe",
+          "rundkjøring",
+          "bilferje",
+          "passasjerferje",
+          "gangOgSykkelveg",
+          "sykkelveg",
+          "gangveg",
+          "gågate",
+          "fortau",
+          "trapp",
+          "gangfelt",
+          "gatetun",
+          "traktorveg",
+          "sti",
+          "annet"
+        ]
+      },
+      "Vegfase": {
+        "type": "string",
+        "enum": ["P", "A", "V", "F"]
+      },
+      "Vegkategori": {
+        "type": "string",
+        "enum": ["E", "F", "K", "P", "R", "S", "U"]
+      },
+      "VeglenkeType": {
+        "type": "string",
+        "enum": ["Ukjent", "DETALJERT", "KONNEKTERING", "DETALJERT_KONNEKTERING", "HOVED"]
+      },
+      "Vegsystem": {
+        "type": "object",
+        "properties": {
+          "vegkategori": {
+            "$ref": "#/components/schemas/Vegkategori"
+          },
+          "fase": {
+            "$ref": "#/components/schemas/Vegfase"
+          },
+          "nummer": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": ["fase", "vegkategori"]
+      },
+      "Vegsystemreferanse": {
+        "type": "object",
+        "properties": {
+          "vegsystem": {
+            "$ref": "#/components/schemas/Vegsystem"
+          },
+          "strekning": {
+            "$ref": "#/components/schemas/Strekning"
+          },
+          "kryssystem": {
+            "$ref": "#/components/schemas/Kryssystem"
+          },
+          "sideanlegg": {
+            "$ref": "#/components/schemas/Sideanlegg"
+          },
+          "kortform": {
+            "type": "string"
+          }
+        }
+      },
+      "TopologinivaParameter": {
+        "type": "string",
+        "enum": ["kjørebane", "kjørefelt", "vegtrase"]
+      },
+      "NesteSide": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string"
+          },
+          "href": {
+            "type": "string"
+          }
+        },
+        "required": ["href", "start"]
+      },
+      "SideMetadata": {
+        "type": "object",
+        "properties": {
+          "antall": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "returnert": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sidestørrelse": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "neste": {
+            "$ref": "#/components/schemas/NesteSide"
+          }
+        },
+        "required": ["returnert", "sidestørrelse"]
+      },
+      "Topologiniva": {
+        "type": "string",
+        "enum": ["Vegtrase", "Kjørebane", "Kjørefelt"]
+      },
+      "Veglenke": {
+        "type": "object",
+        "properties": {
+          "veglenkenummer": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "type": {
+            "$ref": "#/components/schemas/VeglenkeType"
+          },
+          "startport": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sluttport": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "startposisjon": {
+            "type": "number",
+            "format": "double"
+          },
+          "sluttposisjon": {
+            "type": "number",
+            "format": "double"
+          },
+          "lengde": {
+            "type": "number",
+            "format": "double"
+          },
+          "geometri": {
+            "$ref": "#/components/schemas/GeometriMedKvalitet"
+          },
+          "måledato": {
+            "type": "string",
+            "format": "date"
+          },
+          "målemetode": {
+            "$ref": "#/components/schemas/Malemetode"
+          },
+          "detaljnivå": {
+            "$ref": "#/components/schemas/Detaljniva"
+          },
+          "typeVeg": {
+            "$ref": "#/components/schemas/TypeVeg"
+          },
+          "typeVeg_sosi": {
+            "$ref": "#/components/schemas/TypeVegSosi"
+          },
+          "feltoversikt": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "startdato": {
+            "type": "string",
+            "format": "date"
+          },
+          "sluttdato": {
+            "type": "string",
+            "format": "date"
+          },
+          "superstedfesting": {
+            "$ref": "#/components/schemas/Superstedfesting"
+          },
+          "topologinivå": {
+            "$ref": "#/components/schemas/Topologiniva",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "detaljnivå",
+          "geometri",
+          "lengde",
+          "målemetode",
+          "sluttport",
+          "sluttposisjon",
+          "startdato",
+          "startport",
+          "startposisjon",
+          "topologinivå",
+          "type",
+          "typeVeg",
+          "typeVeg_sosi",
+          "veglenkenummer"
+        ]
+      },
+      "Veglenkeport": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "relativPosisjon": {
+            "type": "number",
+            "format": "double"
+          },
+          "tilkobling": {
+            "$ref": "#/components/schemas/VeglenkeportTilkobling"
+          }
+        },
+        "required": ["id", "relativPosisjon", "tilkobling"]
+      },
+      "VeglenkeportTilkobling": {
+        "type": "object",
+        "properties": {
+          "portnummer": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nodeid": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "href": {
+            "type": "string"
+          }
+        },
+        "required": ["href", "nodeid", "portnummer"]
+      },
+      "Veglenkesekvens": {
+        "type": "object",
+        "properties": {
+          "veglenkesekvensid": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "href": {
+            "type": "string",
+            "description": "URL-en til denne veglenkesekvensen"
+          },
+          "lengde": {
+            "type": "number",
+            "format": "double"
+          },
+          "porter": {
+            "type": "array",
+            "description": "Liste av porter som er tilknyttet veglenkesekvensen",
+            "items": {
+              "$ref": "#/components/schemas/Veglenkeport"
+            }
+          },
+          "veglenker": {
+            "type": "array",
+            "description": "Liste av veglenker som inngår i denne veglenkesekvensen",
+            "items": {
+              "$ref": "#/components/schemas/Veglenke"
+            }
+          },
+          "låst_lengde": {
+            "type": "boolean"
+          }
+        },
+        "required": ["href", "lengde", "låst_lengde", "porter", "veglenker", "veglenkesekvensid"]
+      },
+      "VeglenkesekvenserSide": {
+        "type": "object",
+        "properties": {
+          "objekter": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Veglenkesekvens"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/SideMetadata"
+          }
+        },
+        "required": ["metadata", "objekter"]
+      },
+      "DetaljnivaParameter": {
+        "type": "string",
+        "enum": ["VT", "KB", "KF", "VTKB"]
+      },
+      "VeglenketypeParameter": {
+        "type": "string",
+        "enum": ["Hoved", "Detaljert", "Konnektering", "detaljert_konnektering"]
+      },
+      "Vegforvalter": {
+        "type": "object",
+        "properties": {
+          "enumid": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "vegforvalter": {
+            "type": "string"
+          }
+        },
+        "required": ["enumid", "vegforvalter"]
+      },
+      "Veglenkesegment": {
+        "type": "object",
+        "properties": {
+          "veglenkesekvensid": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "href": {
+            "type": "string",
+            "description": "URL-en til den segmenterte veglenkesekvensen som dette segmentet tilhører"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata"
+          },
+          "startposisjon": {
+            "type": "number",
+            "format": "double"
+          },
+          "sluttposisjon": {
+            "type": "number",
+            "format": "double"
+          },
+          "kortform": {
+            "type": "string"
+          },
+          "veglenkenummer": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "segmentnummer": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "startnode": {
+            "type": "string",
+            "description": "I V4 så er fiktive noder representert som posisjon@veglenkesekvens"
+          },
+          "sluttnode": {
+            "type": "string",
+            "description": "I V4 så er fiktive noder representert som posisjon@veglenkesekvens"
+          },
+          "referanse": {
+            "type": "string",
+            "description": "Kombinasjon av veglenkesekvensid, veglenkenummer og segmentnummer. Unik for hvert segment."
+          },
+          "type": {
+            "$ref": "#/components/schemas/VeglenkeType"
+          },
+          "detaljnivå": {
+            "$ref": "#/components/schemas/Detaljniva"
+          },
+          "typeVeg": {
+            "$ref": "#/components/schemas/TypeVeg"
+          },
+          "typeVeg_sosi": {
+            "$ref": "#/components/schemas/TypeVegSosi"
+          },
+          "målemetode": {
+            "$ref": "#/components/schemas/Malemetode"
+          },
+          "måledato": {
+            "type": "string",
+            "format": "date"
+          },
+          "superstedfesting": {
+            "$ref": "#/components/schemas/Superstedfesting"
+          },
+          "feltoversikt": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "feltoversiktMetreringsretning": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "geometri": {
+            "$ref": "#/components/schemas/GeometriMedKvalitet"
+          },
+          "lengde": {
+            "type": "number",
+            "format": "double"
+          },
+          "fylke": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kommune": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "vegsystemreferanse": {
+            "$ref": "#/components/schemas/Vegsystemreferanse"
+          },
+          "kontraktsområder": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Kontraktsomrade"
+            }
+          },
+          "riksvegruter": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Riksvegrute"
+            }
+          },
+          "vegforvaltere": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Vegforvalter"
+            }
+          },
+          "adresse": {
+            "$ref": "#/components/schemas/Adresse"
+          },
+          "topologinivå": {
+            "$ref": "#/components/schemas/Topologiniva",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "detaljnivå",
+          "fylke",
+          "geometri",
+          "href",
+          "kommune",
+          "kortform",
+          "lengde",
+          "metadata",
+          "målemetode",
+          "referanse",
+          "segmentnummer",
+          "sluttnode",
+          "sluttposisjon",
+          "startnode",
+          "startposisjon",
+          "topologinivå",
+          "type",
+          "typeVeg",
+          "typeVeg_sosi",
+          "veglenkenummer",
+          "veglenkesekvensid",
+          "vegsystemreferanse"
+        ]
+      },
+      "VeglenkesegmenterSide": {
+        "type": "object",
+        "properties": {
+          "objekter": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Veglenkesegment"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/SideMetadata"
+          }
+        },
+        "required": ["metadata", "objekter"]
+      },
+      "VeglenkesegmenterStatistikk": {
+        "type": "object",
+        "properties": {
+          "antall": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Antallet veglenkesegmenter med sluttdato i fremtiden"
+          },
+          "totalLengde": {
+            "type": "number",
+            "format": "double",
+            "description": "Total lengde for alle veglenkesegmenter med sluttdato i fremtiden"
+          }
+        },
+        "required": ["antall", "totalLengde"]
+      },
+      "Gruppering": {
+        "type": "string",
+        "enum": ["fylke", "vegkategori"]
+      },
+      "VeglenkesegmenterStatistikkGruppert": {
+        "type": "object",
+        "properties": {
+          "antall": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Antallet veglenkesegmenter i gruppen"
+          },
+          "fylke": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Hvilket fylke gruppen tilhører. Utelatt hvis ikke gruppert på fylke"
+          },
+          "vegkategori": {
+            "$ref": "#/components/schemas/Vegkategori",
+            "description": "Hvilken vegkategori gruppen tilhører. Utelatt hvis ikke gruppert på vegkategori"
+          }
+        },
+        "required": ["antall"]
+      },
+      "VeglenkesekvensEndringerSide": {
+        "type": "object",
+        "properties": {
+          "veglenkesekvenserFjernet": {
+            "type": "array",
+            "description": "Liste med alle endringer som fjerner veglenkesekvenser",
+            "items": {
+              "$ref": "#/components/schemas/VeglenkesekvensFjernet"
+            }
+          },
+          "veglenkesekvenserSegmentert": {
+            "type": "array",
+            "description": "Liste med alle endringer i segmentering av veglenkesekvenser",
+            "items": {
+              "$ref": "#/components/schemas/VeglenkesekvensSegmentert"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/SideMetadata"
+          }
+        },
+        "required": ["metadata", "veglenkesekvenserFjernet", "veglenkesekvenserSegmentert"]
+      },
+      "VeglenkesekvensFjernet": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tidspunkt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Tidspunktet da endringen ble gjort tilgjengelig i Les API V4"
+          }
+        },
+        "required": ["id", "tidspunkt"]
+      },
+      "VeglenkesekvensSegmentert": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tidspunkt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Tidspunktet da endringen ble gjort tilgjengelig i Les API V4"
+          }
+        },
+        "required": ["id", "tidspunkt"]
+      },
+      "Posisjon": {
+        "type": "object",
+        "properties": {
+          "vegsystemreferanse": {
+            "$ref": "#/components/schemas/Vegsystemreferanse"
+          },
+          "veglenkesekvens": {
+            "$ref": "#/components/schemas/PosisjonVeglenkesekvens"
+          },
+          "geometri": {
+            "$ref": "#/components/schemas/PosisjonGeometri"
+          },
+          "kommune": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": ["geometri", "kommune", "veglenkesekvens", "vegsystemreferanse"]
+      },
+      "PosisjonGeometri": {
+        "type": "object",
+        "properties": {
+          "wkt": {
+            "type": "string"
+          },
+          "srid": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": ["srid", "wkt"]
+      },
+      "PosisjonVeglenkesekvens": {
+        "type": "object",
+        "properties": {
+          "veglenkesekvensid": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "relativPosisjon": {
+            "type": "number",
+            "format": "double"
+          },
+          "kortform": {
+            "type": "string"
+          }
+        },
+        "required": ["kortform", "relativPosisjon", "veglenkesekvensid"]
+      },
+      "AlwaysIncludeMapStringPosisjon": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/Posisjon"
+        },
+        "properties": {
+          "map": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Posisjon"
+            },
+            "writeOnly": true
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PosisjonMedAvstand": {
+        "type": "object",
+        "properties": {
+          "vegsystemreferanse": {
+            "$ref": "#/components/schemas/Vegsystemreferanse"
+          },
+          "veglenkesekvens": {
+            "$ref": "#/components/schemas/PosisjonVeglenkesekvens"
+          },
+          "geometri": {
+            "$ref": "#/components/schemas/PosisjonGeometri"
+          },
+          "kommune": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "avstand": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": ["avstand", "geometri", "kommune", "veglenkesekvens", "vegsystemreferanse"]
+      },
+      "Node": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Nettelementid for noden"
+          },
+          "href": {
+            "type": "string",
+            "description": "URL-en til denne noden"
+          },
+          "startdato": {
+            "type": "string",
+            "format": "date"
+          },
+          "sluttdato": {
+            "type": "string",
+            "format": "date"
+          },
+          "kommuner": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "uniqueItems": true
+          },
+          "geometri": {
+            "$ref": "#/components/schemas/NodeGeometri"
+          },
+          "porter": {
+            "type": "array",
+            "description": "Liste av porter som er tilknyttet noden",
+            "items": {
+              "$ref": "#/components/schemas/Nodeport"
+            }
+          }
+        },
+        "required": ["geometri", "href", "id", "kommuner", "porter", "startdato"]
+      },
+      "NodeGeometri": {
+        "type": "object",
+        "properties": {
+          "wkt": {
+            "type": "string"
+          },
+          "srid": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": ["srid", "wkt"]
+      },
+      "NodeSide": {
+        "type": "object",
+        "properties": {
+          "objekter": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Node"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/SideMetadata"
+          }
+        },
+        "required": ["metadata", "objekter"]
+      },
+      "Nodeport": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Portnummer"
+          },
+          "tilkobling": {
+            "$ref": "#/components/schemas/NodeportTilkobling",
+            "description": "Informasjon om portens tilkobling til veglenkesekvens"
+          }
+        },
+        "required": ["id", "tilkobling"]
+      },
+      "NodeportTilkobling": {
+        "type": "object",
+        "properties": {
+          "portnummer": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "veglenkesekvensid": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Veglenkesekvensid-en som porten er tilkoblet"
+          },
+          "href": {
+            "type": "string",
+            "description": "URL-en til den segmenterte veglenkesekvensen som porten er tilkoblet"
+          }
+        },
+        "required": ["href", "portnummer", "veglenkesekvensid"]
+      }
+    }
+  }
+}

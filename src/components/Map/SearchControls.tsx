@@ -278,7 +278,7 @@ export default function SearchControls({ searchMode }: Props) {
       )}
 
       {searchMode === 'stedfesting' && (
-        <div className="strekning-controls">
+        <div className="stedfesting-controls">
           <label className="search-label" htmlFor="stedfesting-input">
             Stedfesting
           </label>

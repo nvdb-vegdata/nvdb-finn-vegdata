@@ -15,6 +15,7 @@ alwaysApply: false
 ## API Rules
 
 - Use Uberiket API for vegobjekt data: `https://nvdbapiles.atlas.vegvesen.no/uberiket/api/v1`
+- Use Vegnett API for vegnett data: `https://nvdbapiles.atlas.vegvesen.no/vegnett/api/v4`
 - Include `X-Client: nvdb-finn-vegdata` when calling NVDB APIs.
 
 ## Verification
