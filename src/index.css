@@ -880,6 +880,7 @@ body,
   max-width: 300px;
   max-height: 400px;
   overflow-y: auto;
+  padding-right: 18px;
 }
 
 .popup-title {
@@ -1571,6 +1572,29 @@ body,
 }
 
 /* Vegnett posisjon popup */
+.popup-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: #888;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.popup-close-btn:hover {
+  background: var(--ui-border);
+  color: #333;
+}
+
 .posisjon-loading {
   display: flex;
   align-items: center;

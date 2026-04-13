@@ -70,7 +70,7 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
 - A map-pin button in the top-right map toolbar activates the "Finn vegposisjon" mode
 - When active, the cursor changes to a crosshair and clicking anywhere on the map performs a position lookup against `https://nvdbapiles.atlas.vegvesen.no/vegnett/api/v4/posisjon`
 - The API is called with the clicked UTM33 coordinates (`nord`, `ost`) and a max search radius of 20 meters
-- A popup appears at the clicked position showing for each result:
+- A popup appears at the road snap point showing for each result:
   - **Vegsystemreferanse** (e.g., `KV1249 S1D1 m846`)
   - **Lenkesekvensid** (e.g., `405363`)
   - **Relativ posisjon** (e.g., `0.85285242`)
@@ -78,6 +78,7 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
   - Distance from the clicked point (if > 0)
 - The full veglenkesekvens for all returned results is fetched and rendered on the map in green
 - The snap point geometry from the first result is also shown as a green marker
+- The popup has a close button (×) in the upper right corner that dismisses it without deactivating the mode
 - Clicking the button again deactivates the mode and clears the results
 - Activating this mode deactivates the standard veglenke-click selection (and vice versa)
 - Activating this mode deactivates the measuring tool (and vice versa) — the two tools are mutually exclusive

@@ -4,7 +4,7 @@ import ScaleLine from 'ol/control/ScaleLine'
 import { click } from 'ol/events/condition'
 import Feature from 'ol/Feature'
 import WKT from 'ol/format/WKT'
-import type { LineString, Polygon } from 'ol/geom'
+import type { LineString, Polygon, SimpleGeometry } from 'ol/geom'
 import type ImageTile from 'ol/ImageTile'
 import { Draw, Select } from 'ol/interaction'
 import TileLayer from 'ol/layer/Tile'
@@ -448,6 +448,8 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
                 featureProjection: 'EPSG:25833',
               })
               posisjonVeglenkeSource.current.addFeature(new Feature({ geometry: snapGeom }))
+              const snapCoord = (snapGeom as SimpleGeometry).getFirstCoordinate()
+              posisjonOverlayRef.current?.setPosition(snapCoord)
             } catch {
               // ignore
             }
@@ -872,7 +874,17 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
       </div>
 
       <VeglenkePopup selectedFeature={selectedFeature} vegobjekterByType={vegobjekterByType} popupRef={popupRef} />
-      <VegnettPosisjonPopup results={posisjonResults} loading={posisjonLoading} error={posisjonError} popupRef={posisjonPopupRef} />
+      <VegnettPosisjonPopup
+        results={posisjonResults}
+        loading={posisjonLoading}
+        error={posisjonError}
+        popupRef={posisjonPopupRef}
+        onClose={() => {
+          setPosisjonResults(null)
+          setPosisjonError(null)
+          posisjonOverlayRef.current?.setPosition(undefined)
+        }}
+      />
     </>
   )
 }
