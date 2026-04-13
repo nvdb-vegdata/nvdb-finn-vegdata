@@ -888,6 +888,7 @@ body,
   margin-bottom: 8px;
   padding-bottom: 8px;
   border-bottom: 1px solid #ddd;
+  cursor: text;
 }
 
 .popup-property {
@@ -938,6 +939,7 @@ body,
   bottom: 12px;
   left: -50px;
   min-width: 200px;
+  cursor: default;
 }
 
 .ol-popup:after,
@@ -1637,11 +1639,13 @@ body,
 .posisjon-label {
   color: #666;
   min-width: 90px;
+  cursor: text;
 }
 
 .posisjon-value {
   font-family: monospace;
   color: var(--ui-text);
+  cursor: text;
 }
 
 .posisjon-copy-btn {
@@ -1649,4 +1653,5 @@ body,
   background: #fff;
   color: #555;
   display: inline-flex;
+  cursor: pointer;
 }
