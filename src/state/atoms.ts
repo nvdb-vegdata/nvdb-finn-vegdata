@@ -79,7 +79,7 @@ function getInitialPolygonWkt(): string {
   return params.get('polygon')?.trim() ?? ''
 }
 
-export type SearchMode = 'polygon' | 'strekning' | 'stedfesting'
+export type SearchMode = 'polygon' | 'strekning' | 'stedfesting' | 'vegsystemreferanse'
 
 function getInitialStrekning(): string {
   const params = new URLSearchParams(window.location.search)
@@ -91,11 +91,19 @@ function getInitialStedfesting(): string {
   return params.get('stedfesting')?.trim() ?? ''
 }
 
+function getInitialVegsystemreferanse(): string {
+  const params = new URLSearchParams(window.location.search)
+  return params.get('vegsystemreferanse')?.trim() ?? ''
+}
+
 function getInitialSearchMode(): SearchMode {
   const stedfesting = getInitialStedfesting()
   if (stedfesting.length > 0) return 'stedfesting'
   const strekning = getInitialStrekning()
-  return strekning.length > 0 ? 'strekning' : 'polygon'
+  if (strekning.length > 0) return 'strekning'
+  const vegsystemreferanse = getInitialVegsystemreferanse()
+  if (vegsystemreferanse.length > 0) return 'vegsystemreferanse'
+  return 'polygon'
 }
 
 function isIsoDate(value: string): boolean {
@@ -159,6 +167,8 @@ export const strekningAtom = atom<string>(getInitialStrekning())
 export const strekningInputAtom = atom<string>(getInitialStrekning())
 export const stedfestingAtom = atom<string>(getInitialStedfesting())
 export const stedfestingInputAtom = atom<string>(getInitialStedfesting())
+export const vegsystemreferanseAtom = atom<string>(getInitialVegsystemreferanse())
+export const vegsystemreferanseInputAtom = atom<string>(getInitialVegsystemreferanse())
 export const focusedVegobjektAtom = atom<{
   typeId: number
   id: number

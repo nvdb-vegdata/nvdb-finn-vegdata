@@ -13,12 +13,12 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
 ## Core Workflow
 
 1. **Select Object Types** - User selects which road object types they want to find
-2. **Choose Search Mode** - Toggle between polygon, vegsystemreferanse (strekning), or stedfesting (switching mode clears other search inputs/state)
+2. **Choose Search Mode** - Toggle between polygon, vegsystemreferanse (strekning), stedfesting, or vegsystemreferanse (segmentert) (switching mode clears other search inputs/state)
 3. **(Optional) Set Date Filter** - Use the "Bruk dato" checkbox and date input in the top row next to mode buttons. Date changes are applied on blur/Enter.
-4. **Define Area/Route** - Draw a small polygon or paste a polygon WKT and click "Søk"/"Kopier WKT", enter a vegsystemreferanse (e.g., "FV6666 S1"), or provide stedfesting (e.g., "0.2-0.5@1234")
-5. **Fetch Veglenker** - Query veglenkesekvenser by polygon, vegsystemreferanse, or stedfesting IDs (configurable limit, default 500, max 1000). For vegsystemreferanse searches, fetch veglenkesekvenser and support objects (type 915 for bare vegsystem, 916 when strekning/delstrekning is present) in parallel for the active date, then clip away veglenker that do not overlap the returned support object stedfesting.
+4. **Define Area/Route** - Draw a small polygon or paste a polygon WKT and click "Søk"/"Kopier WKT", enter a vegsystemreferanse (e.g., "FV6666 S1"), provide stedfesting (e.g., "0.2-0.5@1234"), or enter a vegsystemreferanse to look up against segmentert vegnett
+5. **Fetch Veglenker** - Query veglenkesekvenser by polygon, vegsystemreferanse, stedfesting IDs, or veglenkesekvens IDs derived from segmentert vegnett (configurable limit, default 500, max 1000). For strekning searches (vegsystemreferanse strekning mode), fetch veglenkesekvenser and support objects (type 915 for bare vegsystem, 916 when strekning/delstrekning is present) in parallel for the active date, then clip away veglenker that do not overlap the returned support object stedfesting.
 6. **Visualize Veglenker** - Display veglenker on map (only those with geometry overlapping polygon). Polygon clipping is enabled by default, fading the full veglenke and overlaying only the portion inside the polygon.
-7. **Fetch Vegobjekter** - In polygon mode, strekning mode, and stedfesting mode, fetch vegobjekter for all selected types directly from `GET /api/v1/vegobjekter/stream` using the drawn polygon, vegsystemreferanse, or stedfesting filter and parse the NDJSON response incrementally. While the stream is active, the UI shows how many vegobjekter have been fetched so far. If the stream reaches the request limit of 10,000 objects, show a warning suggesting a smaller area, narrower strekning, or fewer/smaller stedfestinger to fetch all results. If the stream times out after some vegobjekter have already arrived, keep the partial results and show a warning that the result set is incomplete. `dato` is always sent in the vegobjekt query (selected date when enabled, otherwise today's date). In strekning mode, and in polygon mode when "Klipp veglenker til polygon" is enabled, vegobjekter are filtered client-side so only objects with actual overlap with the rendered veglenke ranges remain, as long as the veglenkesekvens result is not truncated by the configured limit. For strekning searches, the rendered veglenke ranges are first narrowed by support objects from type `915/916`, using `inkluder=stedfesting,gyldighetsperiode`; overlap against these support objects is exclusive in endepunktene, so a veglenke that only touches a support range at one shared endpoint is removed. If the `915/916` support lookup times out or hits the 10,000-object limit, the strekning search fails instead of showing an uncertain clip result. When polygon filtering removes objects, the UI count shows the visible total together with how many objects were outside the polygon.
+7. **Fetch Vegobjekter** - In polygon mode, strekning mode, stedfesting mode, and vegsystemreferanse (segmentert) mode, fetch vegobjekter for all selected types directly from `GET /api/v1/vegobjekter/stream` using the drawn polygon, vegsystemreferanse, or stedfesting filter and parse the NDJSON response incrementally. While the stream is active, the UI shows how many vegobjekter have been fetched so far. If the stream reaches the request limit of 10,000 objects, show a warning suggesting a smaller area, narrower strekning, or fewer/smaller stedfestinger to fetch all results. If the stream times out after some vegobjekter have already arrived, keep the partial results and show a warning that the result set is incomplete. `dato` is always sent in the vegobjekt query (selected date when enabled, otherwise today's date). In strekning mode, and in polygon mode when "Klipp veglenker til polygon" is enabled, vegobjekter are filtered client-side so only objects with actual overlap with the rendered veglenke ranges remain, as long as the veglenkesekvens result is not truncated by the configured limit. For strekning searches, the rendered veglenke ranges are first narrowed by support objects from type `915/916`, using `inkluder=stedfesting,gyldighetsperiode`; overlap against these support objects is exclusive in endepunktene, so a veglenke that only touches a support range at one shared endpoint is removed. If the `915/916` support lookup times out or hits the 10,000-object limit, the strekning search fails instead of showing an uncertain clip result. When polygon filtering removes objects, the UI count shows the visible total together with how many objects were outside the polygon.
 8. **Inspect** - View detailed vegobjekt information in a collapsible list
 
 ## Key Concepts
@@ -35,6 +35,17 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
 - For lines: startposisjon and sluttposisjon (format: "0.2-0.8@1234")
 - For points: single posisjon (format: "0.5@1234")
 - Overlap detection: check if object's position range intersects veglenke's position range
+
+### Vegsystemreferanse (Segmentert) Search Mode
+- User enters a vegsystemreferanse (same format as strekning mode, e.g., "FV6666 S1")
+- The app queries the Vegnett API for segmentert vegnett: `GET /api/v4/veglenkesekvenser/segmentert?vegsystemreferanse=...` (limit 1000 segments)
+- From each returned `Veglenkesegment`, the app extracts `veglenkesekvensid`, `startposisjon`, and `sluttposisjon`
+- Ranges per veglenkesekvens are merged (overlapping ranges are combined), yielding stedfesting filter strings in the form `{startposisjon}-{sluttposisjon}@{veglenkesekvensid}`
+- The derived veglenkesekvens IDs are used to fetch veglenkesekvenser (by ID) from the Uberiket API
+- The derived stedfesting filter is used to fetch vegobjekter (same as manual stedfesting mode)
+- Rendering uses the same faded veglenke + highlighted stedfesting range style as manual stedfesting mode
+- The resolved stedfesting filter and veglenkesekvens IDs are passed down from App.tsx and remain consistent between the veglenke fetch, vegobjekt fetch, and rendering
+- URL state is synced via the `vegsystemreferanse` query parameter
 
 ### Polygon Clipping (Default)
 - Enabled by default in polygon mode (can be toggled off)
@@ -180,7 +191,14 @@ Query parameters:
 - `inkluder`: Include stedfesting, egenskaper, gyldighetsperiode, barn
 - `antall`: Limit results
 
-### Veglenke Position Calculation
+### Vegnett API (Segmentert)
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/v4/veglenkesekvenser/segmentert` | Query segmentert vegnett by vegsystemreferanse (used in Vegsystemreferanse mode) |
+
+Query parameters for segmentert:
+- `vegsystemreferanse`: Vegsystemreferanse string (e.g., "FV6666 S1")
+- `antall`: Limit results (default 1000 in this app)
 
 Each veglenke has a position range within its veglenkesekvens:
 - Veglenkesekvens has `porter` array with `{nummer, posisjon}` entries

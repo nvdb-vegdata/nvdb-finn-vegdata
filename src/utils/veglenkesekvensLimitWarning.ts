@@ -1,4 +1,4 @@
-export type VeglenkesekvensLimitWarningMode = 'polygon' | 'strekning' | 'stedfesting'
+export type VeglenkesekvensLimitWarningMode = 'polygon' | 'strekning' | 'stedfesting' | 'vegsystemreferanse'
 
 export function getVeglenkesekvensLimitWarningMessage(
   searchMode: VeglenkesekvensLimitWarningMode,

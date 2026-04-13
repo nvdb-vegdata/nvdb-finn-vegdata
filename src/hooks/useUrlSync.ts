@@ -14,6 +14,7 @@ import {
   stedfestingAtom,
   strekningAtom,
   veglenkesekvensLimitAtom,
+  vegsystemreferanseAtom,
 } from '../state/atoms'
 import { safeReplaceState } from '../utils/historyUtils'
 import { roundPolygonToTwoDecimals } from '../utils/polygonRounding'
@@ -37,6 +38,7 @@ export function useUrlSync(selectedTypes: Vegobjekttype[]) {
   const searchDate = useAtomValue(searchDateAtom)
   const strekning = useAtomValue(strekningAtom)
   const stedfesting = useAtomValue(stedfestingAtom)
+  const vegsystemreferanse = useAtomValue(vegsystemreferanseAtom)
 
   useEffect(() => {
     const url = new URL(window.location.href)
@@ -60,6 +62,11 @@ export function useUrlSync(selectedTypes: Vegobjekttype[]) {
     } else {
       url.searchParams.delete('stedfesting')
     }
+    if (searchMode === 'vegsystemreferanse' && vegsystemreferanse.trim().length > 0) {
+      url.searchParams.set('vegsystemreferanse', vegsystemreferanse.trim())
+    } else {
+      url.searchParams.delete('vegsystemreferanse')
+    }
     if (searchDateEnabled && searchDate.trim().length > 0) {
       url.searchParams.set('dato', searchDate.trim())
     } else {
@@ -79,5 +86,17 @@ export function useUrlSync(selectedTypes: Vegobjekttype[]) {
     }
     const nextUrl = `${url.pathname}${url.search}${url.hash}`
     safeReplaceState(nextUrl, 'filter-sync')
-  }, [allTypesSelected, polygon, polygonClip, searchDate, searchDateEnabled, selectedTypes, searchMode, strekning, stedfesting, veglenkesekvensLimit])
+  }, [
+    allTypesSelected,
+    polygon,
+    polygonClip,
+    searchDate,
+    searchDateEnabled,
+    selectedTypes,
+    searchMode,
+    strekning,
+    stedfesting,
+    vegsystemreferanse,
+    veglenkesekvensLimit,
+  ])
 }

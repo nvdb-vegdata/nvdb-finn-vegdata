@@ -11,6 +11,7 @@ import { useVeglenkesekvenser } from './hooks/useVeglenkesekvenser'
 import { useVegobjekter } from './hooks/useVegobjekter'
 import { useVegobjekterErrorMessage } from './hooks/useVegobjekterErrorMessage'
 import { useVegobjekttyper } from './hooks/useVegobjekttyper'
+import { useVegsystemreferanseStedfesting } from './hooks/useVegsystemreferanseStedfesting'
 import {
   allTypesSelectedAtom,
   polygonAtom,
@@ -23,6 +24,7 @@ import {
   stedfestingAtom,
   strekningAtom,
   veglenkesekvensLimitAtom,
+  vegsystemreferanseAtom,
 } from './state/atoms'
 import { getTodayDate } from './utils/dateUtils'
 import { ensureProjections } from './utils/projections'
@@ -43,6 +45,7 @@ export default function App() {
   const searchMode = useAtomValue(searchModeAtom)
   const strekning = useAtomValue(strekningAtom)
   const stedfesting = useAtomValue(stedfestingAtom)
+  const vegsystemreferanse = useAtomValue(vegsystemreferanseAtom)
   const { data: allTypes, isLoading: datakatalogLoading } = useVegobjekttyper()
 
   useEffect(() => {
@@ -68,13 +71,24 @@ export default function App() {
   }, [searchMode, stedfesting])
 
   const {
+    data: vegsystemreferanseStedfesting,
+    isLoading: vegsystemreferanseLoading,
+    error: vegsystemreferanseError,
+  } = useVegsystemreferanseStedfesting(searchMode === 'vegsystemreferanse' ? vegsystemreferanse : null)
+
+  const {
     data: veglenkeResult,
     isLoading: veglenkerLoading,
     error: veglenkerError,
   } = useVeglenkesekvenser({
     polygonUtm33,
     vegsystemreferanse: searchMode === 'strekning' ? strekning : null,
-    veglenkesekvensIds: searchMode === 'stedfesting' ? (stedfestingParsed?.veglenkesekvensIds ?? null) : null,
+    veglenkesekvensIds:
+      searchMode === 'stedfesting'
+        ? (stedfestingParsed?.veglenkesekvensIds ?? null)
+        : searchMode === 'vegsystemreferanse'
+          ? (vegsystemreferanseStedfesting?.veglenkesekvensIds ?? null)
+          : null,
     referenceDate,
     limit: veglenkesekvensLimit,
   })
@@ -98,7 +112,12 @@ export default function App() {
     polygon: searchMode === 'polygon' ? polygon : null,
     polygonClip: searchMode === 'polygon' ? polygonClip : true,
     vegsystemreferanse: searchMode === 'strekning' ? strekning : null,
-    stedfestingFilterDirect: searchMode === 'stedfesting' ? (stedfestingParsed?.stedfestingFilter ?? null) : null,
+    stedfestingFilterDirect:
+      searchMode === 'stedfesting'
+        ? (stedfestingParsed?.stedfestingFilter ?? null)
+        : searchMode === 'vegsystemreferanse'
+          ? (vegsystemreferanseStedfesting?.stedfestingFilter ?? null)
+          : null,
     searchDate: searchDateEnabled ? searchDate : null,
     veglenkesekvenser: veglenkeResult?.veglenkesekvenser,
     veglenkesekvensLimitReached: limitReached,
@@ -106,7 +125,7 @@ export default function App() {
 
   useVegobjekterErrorMessage(vegobjekterError)
 
-  const isLoading = datakatalogLoading || veglenkerLoading || vegobjekterLoading
+  const isLoading = datakatalogLoading || veglenkerLoading || vegobjekterLoading || vegsystemreferanseLoading
 
   const totalVeglenker = veglenkeResult?.veglenkesekvenser.reduce((sum, vs) => sum + (vs.veglenker?.length ?? 0), 0) ?? 0
 
@@ -156,7 +175,12 @@ export default function App() {
       </aside>
 
       <main className="map-container">
-        <MapView veglenkesekvenser={veglenkeResult?.veglenkesekvenser} vegobjekterByType={vegobjekterByType} isLoadingVeglenker={veglenkerLoading} />
+        <MapView
+          veglenkesekvenser={veglenkeResult?.veglenkesekvenser}
+          vegobjekterByType={vegobjekterByType}
+          isLoadingVeglenker={veglenkerLoading}
+          resolvedStedfesting={vegsystemreferanseStedfesting?.stedfestingFilter ?? null}
+        />
         {limitWarningMessage && !warningDismissed && (
           <div className="limit-warning">
             <span>⚠️ {limitWarningMessage}</span>
@@ -209,6 +233,11 @@ export default function App() {
       {veglenkerError && (
         <div className="error" style={{ position: 'absolute', top: 10, right: 10, zIndex: 1000 }}>
           {veglenkerError instanceof Error ? veglenkerError.message : 'Kunne ikke hente data fra NVDB'}
+        </div>
+      )}
+      {vegsystemreferanseError && (
+        <div className="error" style={{ position: 'absolute', top: 10, right: 10, zIndex: 1000 }}>
+          {vegsystemreferanseError instanceof Error ? vegsystemreferanseError.message : 'Kunne ikke hente segmentert vegnett'}
         </div>
       )}
     </div>

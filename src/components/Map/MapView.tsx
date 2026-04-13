@@ -84,9 +84,10 @@ interface Props {
   veglenkesekvenser: VeglenkesekvensMedPosisjoner[] | undefined
   vegobjekterByType: Map<number, Vegobjekt[]>
   isLoadingVeglenker?: boolean
+  resolvedStedfesting?: string | null
 }
 
-export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadingVeglenker }: Props) {
+export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadingVeglenker, resolvedStedfesting }: Props) {
   const [polygon, setPolygon] = useAtom(polygonAtom)
   const [polygonClip, _setPolygonClip] = useAtom(polygonClipAtom)
   const [searchMode, setSearchMode] = useAtom(searchModeAtom)
@@ -511,7 +512,7 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
   }, [searchMode])
 
   useEffect(() => {
-    const shouldFade = searchMode === 'stedfesting' || (searchMode === 'polygon' && polygonClip)
+    const shouldFade = searchMode === 'stedfesting' || searchMode === 'vegsystemreferanse' || (searchMode === 'polygon' && polygonClip)
     clipOnlySelectionRef.current = searchMode === 'polygon' && polygonClip
     if (veglenkeLayerRef.current) {
       veglenkeLayerRef.current.setStyle(shouldFade ? veglenkeFadedStyle : veglenkeStyle)
@@ -549,10 +550,12 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
     }
   }, [isPosisjonMode])
 
+  const activeRenderedStedfesting = searchMode === 'stedfesting' ? stedfesting : searchMode === 'vegsystemreferanse' ? (resolvedStedfesting ?? '') : ''
+
   useVeglenkeRendering({
     veglenkesekvenser,
     searchMode,
-    stedfesting,
+    stedfesting: activeRenderedStedfesting,
     polygonClip,
     referenceDate,
     veglenkeSource,
@@ -582,6 +585,10 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
 
   const handleStedfestingMode = useCallback(() => {
     setSearchMode('stedfesting')
+  }, [setSearchMode])
+
+  const handleVegsystemreferanseMode = useCallback(() => {
+    setSearchMode('vegsystemreferanse')
   }, [setSearchMode])
 
   const cancelDrawing = useCallback(() => {
@@ -788,6 +795,13 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
           </button>
           <button type="button" className={`btn ${searchMode === 'stedfesting' ? 'btn-primary' : 'btn-secondary'}`} onClick={handleStedfestingMode}>
             Stedfesting
+          </button>
+          <button
+            type="button"
+            className={`btn ${searchMode === 'vegsystemreferanse' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={handleVegsystemreferanseMode}
+          >
+            Vegsystemreferanse
           </button>
           <div className="search-date-controls">
             <label className="search-date-toggle">

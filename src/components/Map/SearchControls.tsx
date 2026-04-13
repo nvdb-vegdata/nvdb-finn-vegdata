@@ -4,14 +4,24 @@ import WKT from 'ol/format/WKT'
 import { Polygon } from 'ol/geom'
 import type { ChangeEvent, KeyboardEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { polygonAtom, polygonClipAtom, polygonWktInputAtom, stedfestingAtom, stedfestingInputAtom, strekningAtom, strekningInputAtom } from '../../state/atoms'
+import {
+  polygonAtom,
+  polygonClipAtom,
+  polygonWktInputAtom,
+  stedfestingAtom,
+  stedfestingInputAtom,
+  strekningAtom,
+  strekningInputAtom,
+  vegsystemreferanseAtom,
+  vegsystemreferanseInputAtom,
+} from '../../state/atoms'
 import { roundPolygonToTwoDecimals } from '../../utils/polygonRounding'
 import { ensureProjections } from '../../utils/projections'
 import { isValidStedfestingInput } from '../../utils/stedfestingParser'
-import { isValidVegsystemreferanse } from '../../utils/vegsystemreferanseValidator'
+import { isValidVegsystemreferanse, isValidVegsystemreferanseSegmentering } from '../../utils/vegsystemreferanseValidator'
 
 interface Props {
-  searchMode: 'polygon' | 'strekning' | 'stedfesting'
+  searchMode: 'polygon' | 'strekning' | 'stedfesting' | 'vegsystemreferanse'
 }
 
 const POLYGON_WKT_REGEX = /^POLYGON\s*\(\(\s*-?\d+(?:\.\d+)?\s+-?\d+(?:\.\d+)?(?:\s*,\s*-?\d+(?:\.\d+)?\s+-?\d+(?:\.\d+)?)+\s*\)\)\s*$/i
@@ -36,6 +46,9 @@ export default function SearchControls({ searchMode }: Props) {
   const [, setStedfesting] = useAtom(stedfestingAtom)
   const [stedfestingInput, setStedfestingInput] = useAtom(stedfestingInputAtom)
   const [stedfestingError, setStedfestingError] = useState<string | null>(null)
+  const [, setVegsystemreferanse] = useAtom(vegsystemreferanseAtom)
+  const [vegsystemreferanseInput, setVegsystemreferanseInput] = useAtom(vegsystemreferanseInputAtom)
+  const [vegsystemreferanseError, setVegsystemreferanseError] = useState<string | null>(null)
 
   useEffect(() => {
     return () => {
@@ -209,6 +222,43 @@ export default function SearchControls({ searchMode }: Props) {
     setStedfestingError(null)
   }, [setStedfestingInput, setStedfesting])
 
+  const handleVegsystemreferanseChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setVegsystemreferanseInput(event.target.value)
+      setVegsystemreferanseError(null)
+    },
+    [setVegsystemreferanseInput],
+  )
+
+  const handleVegsystemreferanseSearch = useCallback(() => {
+    const trimmed = vegsystemreferanseInput.trim()
+    if (trimmed.length === 0) return
+    // if (!isValidVegsystemreferanseSegmentering(trimmed)) {
+    //   setVegsystemreferanseError('Ugyldig vegsystemreferanse. Bruk f.eks. EV18 S33D1 eller EV18 S33D1 m10-40.')
+    //   return
+    // }
+    setVegsystemreferanseError(null)
+    setVegsystemreferanse(trimmed)
+  }, [setVegsystemreferanse, vegsystemreferanseInput])
+
+  const handleVegsystemreferanseKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        if (vegsystemreferanseInput.trim().length > 0) {
+          handleVegsystemreferanseSearch()
+        }
+      }
+    },
+    [handleVegsystemreferanseSearch, vegsystemreferanseInput],
+  )
+
+  const clearVegsystemreferanse = useCallback(() => {
+    setVegsystemreferanseInput('')
+    setVegsystemreferanse('')
+    setVegsystemreferanseError(null)
+  }, [setVegsystemreferanseInput, setVegsystemreferanse])
+
   useEffect(() => {
     if (searchMode !== 'polygon' && (polygon || polygonWktInput || polygonError)) {
       clearPolygon()
@@ -219,10 +269,14 @@ export default function SearchControls({ searchMode }: Props) {
     if (searchMode !== 'stedfesting' && (stedfestingInput || stedfestingError)) {
       clearStedfesting()
     }
+    if (searchMode !== 'vegsystemreferanse' && (vegsystemreferanseInput || vegsystemreferanseError)) {
+      clearVegsystemreferanse()
+    }
   }, [
     clearPolygon,
     clearStedfesting,
     clearStrekning,
+    clearVegsystemreferanse,
     polygon,
     polygonError,
     polygonWktInput,
@@ -231,6 +285,8 @@ export default function SearchControls({ searchMode }: Props) {
     stedfestingInput,
     strekningError,
     strekningInput,
+    vegsystemreferanseError,
+    vegsystemreferanseInput,
   ])
 
   const trimmedStrekningInput = strekningInput.trim()
@@ -240,6 +296,8 @@ export default function SearchControls({ searchMode }: Props) {
   const trimmedPolygonInput = polygonWktInput.trim()
   const isPolygonRegexValid = trimmedPolygonInput.length === 0 || isValidPolygonWkt(trimmedPolygonInput)
   const isPolygonValid = trimmedPolygonInput.length === 0 || (isPolygonRegexValid && polygonError === null)
+  const trimmedVegsystemreferanseInput = vegsystemreferanseInput.trim()
+  const isVegsystemreferanseValid = trimmedVegsystemreferanseInput.length === 0 || isValidVegsystemreferanseSegmentering(trimmedVegsystemreferanseInput)
 
   return (
     <>
@@ -308,6 +366,40 @@ export default function SearchControls({ searchMode }: Props) {
             </button>
           </div>
           {stedfestingError && <div className="strekning-error">{stedfestingError}</div>}
+        </div>
+      )}
+
+      {searchMode === 'vegsystemreferanse' && (
+        <div className="strekning-controls">
+          <label className="search-label" htmlFor="vegsystemreferanse-input">
+            Vegsystemreferanse
+          </label>
+          <div className="search-input-row">
+            <div className="search-input-wrapper">
+              <input
+                id="vegsystemreferanse-input"
+                className="search-input"
+                placeholder="Eks.: EV18 S33D1 eller EV18 S33D1 m10-40"
+                value={vegsystemreferanseInput}
+                onChange={handleVegsystemreferanseChange}
+                onKeyDown={handleVegsystemreferanseKeyDown}
+              />
+              {vegsystemreferanseInput && (
+                <button className="search-clear-btn" type="button" onClick={clearVegsystemreferanse} aria-label="Tøm vegsystemreferanse">
+                  <X size={14} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={handleVegsystemreferanseSearch}
+              disabled={trimmedVegsystemreferanseInput.length === 0 || !isVegsystemreferanseValid}
+            >
+              Søk
+            </button>
+          </div>
+          {vegsystemreferanseError && <div className="strekning-error">{vegsystemreferanseError}</div>}
         </div>
       )}
 

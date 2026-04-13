@@ -50,7 +50,7 @@ export function useVeglenkeRendering({
       searchMode === 'polygon' && polygonClip && drawnGeometry && drawnGeometry.getType() === 'Polygon' ? (drawnGeometry as Polygon) : null
 
     const stedfestingRangesById =
-      searchMode === 'stedfesting' && stedfesting.trim().length > 0
+      (searchMode === 'stedfesting' || searchMode === 'vegsystemreferanse') && stedfesting.trim().length > 0
         ? parseStedfestingRanges(stedfesting).reduce((map, range) => {
             const existing = map.get(range.id)
             if (existing) {
