@@ -25,9 +25,10 @@ function mergeRanges(ranges: { start: number; end: number }[]): { start: number;
   return merged
 }
 
-function clipSegmentPositions(segment: Veglenkesegment, requestedMeterRange: MeterRange): { start: number; end: number } | null {
-  const segMeterFra = segment.vegsystemreferanse.strekning?.fra_meter
-  const segMeterTil = segment.vegsystemreferanse.strekning?.til_meter
+export function clipSegmentPositions(segment: Veglenkesegment, requestedMeterRange: MeterRange): { start: number; end: number } | null {
+  const strekning = segment.vegsystemreferanse.strekning
+  const segMeterFra = strekning?.fra_meter
+  const segMeterTil = strekning?.til_meter
 
   if (segMeterFra === undefined || segMeterTil === undefined) {
     return { start: segment.startposisjon, end: segment.sluttposisjon }
@@ -44,6 +45,17 @@ function clipSegmentPositions(segment: Veglenkesegment, requestedMeterRange: Met
   if (clippedMeterFra > clippedMeterTil) return null
 
   const posSpan = segment.sluttposisjon - segment.startposisjon
+  const retning = strekning?.retning
+
+  if (retning === 'MOT') {
+    // For MOT direction: startposisjon ↔ til_meter, sluttposisjon ↔ fra_meter
+    // position(meter) = startposisjon + (til_meter - meter) / meterSpan * posSpan
+    const clippedStart = segment.startposisjon + ((segMeterTil - clippedMeterTil) / meterSpan) * posSpan
+    const clippedEnd = segment.startposisjon + ((segMeterTil - clippedMeterFra) / meterSpan) * posSpan
+    return { start: clippedStart, end: clippedEnd }
+  }
+
+  // MED direction (default): startposisjon ↔ fra_meter, sluttposisjon ↔ til_meter
   const clippedStart = segment.startposisjon + ((clippedMeterFra - segMeterFra) / meterSpan) * posSpan
   const clippedEnd = segment.startposisjon + ((clippedMeterTil - segMeterFra) / meterSpan) * posSpan
 
