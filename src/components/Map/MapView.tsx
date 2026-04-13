@@ -576,9 +576,47 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
     mapInstance,
   })
 
+  const handleStrekningMode = useCallback(() => {
+    setSearchMode('strekning')
+  }, [setSearchMode])
+
+  const handleStedfestingMode = useCallback(() => {
+    setSearchMode('stedfesting')
+  }, [setSearchMode])
+
+  const cancelDrawing = useCallback(() => {
+    if (drawInteraction.current && mapInstance.current) {
+      mapInstance.current.removeInteraction(drawInteraction.current)
+      drawInteraction.current = null
+    }
+    setIsDrawing(false)
+  }, [])
+
+  const clearMeasure = useCallback(() => {
+    if (measureInteraction.current && mapInstance.current) {
+      mapInstance.current.removeInteraction(measureInteraction.current)
+      measureInteraction.current = null
+    }
+    measureSource.current.clear()
+    for (const overlay of measureOverlays.current) {
+      mapInstance.current?.removeOverlay(overlay)
+    }
+    measureOverlays.current = []
+    setIsMeasuring(false)
+  }, [])
+
+  const commitSearchDate = useCallback(() => {
+    const nextDate = searchDateDraft.trim()
+    if (!nextDate || nextDate === searchDate) return
+    setSearchDate(nextDate)
+  }, [searchDate, searchDateDraft, setSearchDate])
+
   const startDrawing = useCallback(() => {
     if (!mapInstance.current) return
 
+    setIsPosisjonMode(false)
+    clearMeasure()
+    cancelDrawing()
     drawSource.current.clear()
     veglenkeSource.current.clear()
     setSelectedFeature(null)
@@ -602,7 +640,7 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
     mapInstance.current.addInteraction(draw)
     drawInteraction.current = draw
     setIsDrawing(true)
-  }, [setPolygon])
+  }, [cancelDrawing, clearMeasure, setPolygon])
 
   const handlePolygonMode = useCallback(() => {
     if (searchMode !== 'polygon') {
@@ -615,41 +653,6 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
       startDrawing()
     }
   }, [isDrawing, polygon, searchMode, setSearchMode, startDrawing])
-
-  const handleStrekningMode = useCallback(() => {
-    setSearchMode('strekning')
-  }, [setSearchMode])
-
-  const handleStedfestingMode = useCallback(() => {
-    setSearchMode('stedfesting')
-  }, [setSearchMode])
-
-  const cancelDrawing = useCallback(() => {
-    if (drawInteraction.current && mapInstance.current) {
-      mapInstance.current.removeInteraction(drawInteraction.current)
-      drawInteraction.current = null
-    }
-    setIsDrawing(false)
-  }, [])
-
-  const commitSearchDate = useCallback(() => {
-    const nextDate = searchDateDraft.trim()
-    if (!nextDate || nextDate === searchDate) return
-    setSearchDate(nextDate)
-  }, [searchDate, searchDateDraft, setSearchDate])
-
-  const clearMeasure = useCallback(() => {
-    if (measureInteraction.current && mapInstance.current) {
-      mapInstance.current.removeInteraction(measureInteraction.current)
-      measureInteraction.current = null
-    }
-    measureSource.current.clear()
-    for (const overlay of measureOverlays.current) {
-      mapInstance.current?.removeOverlay(overlay)
-    }
-    measureOverlays.current = []
-    setIsMeasuring(false)
-  }, [])
 
   const startMeasuring = useCallback(() => {
     if (!mapInstance.current) return
@@ -831,6 +834,7 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
           title="Finn vegposisjon (klikk i kart)"
           onClick={() => {
             if (isMeasuring) clearMeasure()
+            if (isDrawing) cancelDrawing()
             setIsPosisjonMode((prev) => !prev)
           }}
         >
@@ -841,7 +845,14 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
           className={`btn-icon ${isMeasuring ? 'btn-icon-active' : ''}`}
           aria-label="Mål avstand"
           title="Mål avstand"
-          onClick={isMeasuring ? clearMeasure : startMeasuring}
+          onClick={
+            isMeasuring
+              ? clearMeasure
+              : () => {
+                  if (isDrawing) cancelDrawing()
+                  startMeasuring()
+                }
+          }
         >
           <Ruler size={20} aria-hidden="true" />
         </button>

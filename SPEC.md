@@ -64,6 +64,7 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
 - The total cumulative distance is shown at the last point (red badge)
 - Double-click to finish a measurement; the labels remain on the map
 - Click the ruler button again (or start a new measurement) to clear the previous measurement
+- Activating this tool cancels any in-progress polygon drawing, and starting polygon drawing deactivates the measure tool
 - Distances are computed in UTM33 (meters); values >= 1 km are shown in km with 2 decimal places
 
 ### Finn Vegposisjon (Klikk i kart)
@@ -82,6 +83,7 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
 - Clicking the button again deactivates the mode and clears the results
 - Activating this mode deactivates the standard veglenke-click selection (and vice versa)
 - Activating this mode deactivates the measuring tool (and vice versa) — the two tools are mutually exclusive
+- Activating this mode cancels any in-progress polygon drawing, and starting polygon drawing deactivates this mode
 - The existing search results and veglenker on the map remain visible while the tool is active
 
 ## UI Design System
