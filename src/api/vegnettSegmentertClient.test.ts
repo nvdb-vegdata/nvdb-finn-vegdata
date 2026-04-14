@@ -121,14 +121,14 @@ describe('clipSegmentPositions', () => {
 describe('segmenteringToStedfesting', () => {
   test('handles MOT segment without meter range (no clipping)', () => {
     const seg = makeSegment(1672711, 0.36, 0.58, 0, 408, 'MOT')
-    const { veglenkesekvensIds, stedfestingFilter } = segmenteringToStedfesting([seg], null)
+    const { veglenkesekvensIds, stedfestingFilter } = segmenteringToStedfesting([seg], null, null, null)
     expect(veglenkesekvensIds).toEqual([1672711])
     expect(stedfestingFilter).toBe('0.36-0.58@1672711')
   })
 
   test('clips MOT segment with meter range and produces correct stedfesting', () => {
     const seg = makeSegment(1672711, 0.36, 0.58, 0, 408, 'MOT')
-    const { stedfestingFilter } = segmenteringToStedfesting([seg], { fra: 100, til: 200 })
+    const { stedfestingFilter } = segmenteringToStedfesting([seg], { fra: 100, til: 200 }, null, null)
     const expectedStart = 0.36 + ((408 - 200) / 408) * (0.58 - 0.36)
     const expectedEnd = 0.36 + ((408 - 100) / 408) * (0.58 - 0.36)
     expect(stedfestingFilter).toBe(`${expectedStart}-${expectedEnd}@1672711`)

@@ -26,9 +26,15 @@ function mergeRanges(ranges: { start: number; end: number }[]): { start: number;
 }
 
 export function clipSegmentPositions(segment: Veglenkesegment, requestedMeterRange: MeterRange): { start: number; end: number } | null {
-  const strekning = segment.vegsystemreferanse.strekning
-  const segMeterFra = strekning?.fra_meter
-  const segMeterTil = strekning?.til_meter
+  const vegsystemreferanse = segment.vegsystemreferanse as {
+    kryssystem?: { fra_meter?: number; til_meter?: number; retning?: 'MED' | 'MOT' }
+    sideanlegg?: { fra_meter?: number; til_meter?: number; retning?: 'MED' | 'MOT' }
+    strekning?: { fra_meter?: number; til_meter?: number; retning?: 'MED' | 'MOT' }
+  }
+
+  const source = vegsystemreferanse.kryssystem ?? vegsystemreferanse.sideanlegg ?? vegsystemreferanse.strekning
+  const segMeterFra = source?.fra_meter
+  const segMeterTil = source?.til_meter
 
   if (segMeterFra === undefined || segMeterTil === undefined) {
     return { start: segment.startposisjon, end: segment.sluttposisjon }
@@ -45,7 +51,7 @@ export function clipSegmentPositions(segment: Veglenkesegment, requestedMeterRan
   if (clippedMeterFra > clippedMeterTil) return null
 
   const posSpan = segment.sluttposisjon - segment.startposisjon
-  const retning = strekning?.retning
+  const retning = source?.retning
 
   if (retning === 'MOT') {
     // For MOT direction: startposisjon ↔ til_meter, sluttposisjon ↔ fra_meter
@@ -64,7 +70,9 @@ export function clipSegmentPositions(segment: Veglenkesegment, requestedMeterRan
 
 export function segmenteringToStedfesting(
   segmenter: Veglenkesegment[],
-  requestedMeterRange: MeterRange | null = null,
+  strekningMeterRange: MeterRange | null = null,
+  kryssdelMeterRange: MeterRange | null,
+  sideanleggMeterRange: MeterRange | null,
 ): {
   veglenkesekvensIds: number[]
   stedfestingFilter: string
@@ -72,7 +80,14 @@ export function segmenteringToStedfesting(
   const rangesBySekvens = new Map<number, { start: number; end: number }[]>()
 
   for (const segment of segmenter) {
-    const clipped = requestedMeterRange ? clipSegmentPositions(segment, requestedMeterRange) : { start: segment.startposisjon, end: segment.sluttposisjon }
+    let clipped: any
+    if (segment.vegsystemreferanse.sideanlegg) {
+      clipped = sideanleggMeterRange ? clipSegmentPositions(segment, sideanleggMeterRange) : { start: segment.startposisjon, end: segment.sluttposisjon }
+    } else if (segment.vegsystemreferanse.kryssystem) {
+      clipped = kryssdelMeterRange ? clipSegmentPositions(segment, kryssdelMeterRange) : { start: segment.startposisjon, end: segment.sluttposisjon }
+    } else {
+      clipped = strekningMeterRange ? clipSegmentPositions(segment, strekningMeterRange) : { start: segment.startposisjon, end: segment.sluttposisjon }
+    }
 
     if (!clipped) continue
 
