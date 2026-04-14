@@ -370,7 +370,7 @@ export default function SearchControls({ searchMode }: Props) {
       )}
 
       {searchMode === 'vegsystemreferanse' && (
-        <div className="strekning-controls">
+        <div className="vegsystemreferanse-controls">
           <label className="search-label" htmlFor="vegsystemreferanse-input">
             Vegsystemreferanse
           </label>
