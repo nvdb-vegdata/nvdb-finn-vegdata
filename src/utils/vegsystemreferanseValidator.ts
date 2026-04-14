@@ -1,13 +1,16 @@
-const VEGSYSTEMREFERANSE_REGEX = /^(?:(\d{4})\s*)?([ERFKPS])(?:([VAPF])\s*)?(\d+)(?:\s*S(\d+(?:-\d+)?))?(?:\s*D(\d+(?:-\d+)?))?\s*$/i
+const VEGSYSTEMREFERANSE_CORE = String.raw`^(?:(\d{4})\s*)?([ERFKPS])(?:([VAPF])\s*)?(\d+)(?:\s*S(\d+(?:-\d+)?))?(?:\s*D(\d+(?:-\d+)?))?`
+const OPTIONAL_METERS = String.raw`(?:\s*m\d+(?:\.\d+)?(?:-\d+(?:\.\d+)?)?)?`
+const METERS = String.raw`m(\d+(?:\.\d+)?)(?:-(\d+(?:\.\d+)?))?`
 
-const VEGSYSTEMREFERANSE_WITH_METERS_REGEX =
-  /^(?:(\d{4})\s*)?([ERFKPS])(?:([VAPF])\s*)?(\d+)(?:\s*S(\d+(?:-\d+)?))?(?:\s*D(\d+(?:-\d+)?))?\s*(?:m(\d+(?:\.\d+)?)(?:-(\d+(?:\.\d+)?))?)?\s*$/i
+const buildRegex = (suffix: string) => new RegExp(`${VEGSYSTEMREFERANSE_CORE}${suffix}$`, 'i')
 
-const VEGSYSTEMREFERANSE_WITH_METERS_REGEX_KRYSSDEL =
-  /^(?:(\d{4})\s*)?([ERFKPS])(?:([VAPF])\s*)?(\d+)(?:\s*S(\d+(?:-\d+)?))?(?:\s*D(\d+(?:-\d+)?))?(?:\s*m\d+(?:\.\d+)?(?:-\d+(?:\.\d+)?)?)?\s*(?:Kryssdel|KD\d+)\s*m(\d+(?:\.\d+)?)(?:-(\d+(?:\.\d+)?))?\s*$/i
+const VEGSYSTEMREFERANSE_REGEX = buildRegex(String.raw`\s*`)
 
-const VEGSYSTEMREFERANSE_WITH_METERS_REGEX_SIDEANLEGG =
-  /^(?:(\d{4})\s*)?([ERFKPS])(?:([VAPF])\s*)?(\d+)(?:\s*S(\d+(?:-\d+)?))?(?:\s*D(\d+(?:-\d+)?))?(?:\s*m\d+(?:\.\d+)?(?:-\d+(?:\.\d+)?)?)?\s*(?:Sideanlegg|SD\d+)\s*m(\d+(?:\.\d+)?)(?:-(\d+(?:\.\d+)?))?\s*$/i
+const VEGSYSTEMREFERANSE_WITH_METERS_REGEX = buildRegex(String.raw`\s*(?:${METERS})?\s*`)
+
+const VEGSYSTEMREFERANSE_WITH_METERS_REGEX_KRYSSDEL = buildRegex(String.raw`${OPTIONAL_METERS}\s*(?:Kryssdel|KD\d+)\s*${METERS}\s*`)
+
+const VEGSYSTEMREFERANSE_WITH_METERS_REGEX_SIDEANLEGG = buildRegex(String.raw`${OPTIONAL_METERS}\s*(?:Sideanlegg|SD\d+)\s*${METERS}\s*`)
 
 export type ParsedVegsystemreferanse = {
   kommune?: string
