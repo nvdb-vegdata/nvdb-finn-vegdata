@@ -46,6 +46,7 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
 - Rendering uses the same faded veglenke + highlighted stedfesting range style as manual stedfesting mode
 - The resolved stedfesting filter and veglenkesekvens IDs are passed down from App.tsx and remain consistent between the veglenke fetch, vegobjekt fetch, and rendering
 - URL state is synced via the `vegsystemreferanse` query parameter
+- When the vegsystemreferanse includes a meter range for a kryssdel (e.g., `EV18 S1 KD1 m100-200` or `EV18 S1 Kryssdel m100-200`) or sideanlegg (e.g., `EV18 S1 SD1 m100-200` or `EV18 S1 Sideanlegg m100-200`), the meter range is parsed separately for each part: segments with a `kryssystem` source are clipped with the kryssdel meter range, segments with a `sideanlegg` source are clipped with the sideanlegg meter range, and regular strekning segments are clipped with the strekning meter range; each range is applied independently
 
 ### Polygon Clipping (Default)
 - Enabled by default in polygon mode (can be toggled off)
