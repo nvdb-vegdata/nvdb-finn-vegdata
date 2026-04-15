@@ -1,12 +1,13 @@
 import { findPosisjon, type PosisjonMedAvstand } from './generated/vegnett'
 
-export async function hentVegnettPosisjon(nord: number, ost: number): Promise<PosisjonMedAvstand[]> {
+export async function hentVegnettPosisjon(nord: number, ost: number, dato: string): Promise<PosisjonMedAvstand[]> {
   return findPosisjon({
     query: {
       nord: nord,
       ost: ost,
       detaljerte_lenker: true,
       konnekteringslenker: true,
+      tidspunkt: dato,
     },
   }).then((response) => {
     if (response.data) {

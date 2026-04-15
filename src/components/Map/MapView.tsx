@@ -138,6 +138,7 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
   const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null)
   const [searchDateDraft, setSearchDateDraft] = useState(searchDate)
   const referenceDate = searchDateEnabled && searchDate ? searchDate : getTodayDate()
+  const referenceDateRef = useRef(referenceDate)
 
   useEffect(() => {
     setSearchDateDraft(searchDate)
@@ -413,7 +414,7 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
       const [ost = 0, nord = 0] = coordinate
 
       try {
-        const results = await hentVegnettPosisjon(nord, ost)
+        const results = await hentVegnettPosisjon(nord, ost, referenceDateRef.current)
         if (abort.signal.aborted) return
 
         setPosisjonResults(results)
@@ -549,6 +550,10 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
       posisjonOverlayRef.current?.setPosition(undefined)
     }
   }, [isPosisjonMode])
+
+  useEffect(() => {
+    referenceDateRef.current = referenceDate
+  }, [referenceDate])
 
   const activeRenderedStedfesting = searchMode === 'stedfesting' ? stedfesting : searchMode === 'vegsystemreferanse' ? (resolvedStedfesting ?? '') : ''
 

@@ -83,6 +83,7 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
 - A map-pin button in the top-right map toolbar activates the "Finn vegposisjon" mode
 - When active, the cursor changes to a crosshair and clicking anywhere on the map performs a position lookup against `https://nvdbapiles.atlas.vegvesen.no/vegnett/api/v4/posisjon`
 - The API is called with the clicked UTM33 coordinates (`nord`, `ost`) and a max search radius of 20 meters
+- The active reference date (selected date when "Bruk dato" is enabled, otherwise today's date) is sent as `tidspunkt` to the position API
 - A popup appears at the road snap point showing for each result:
   - **Vegsystemreferanse** (e.g., `KV1249 S1D1 m846`)
   - **Lenkesekvensid** (e.g., `405363`)
