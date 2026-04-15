@@ -793,20 +793,20 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
             className={`btn draw-toggle-btn ${searchMode === 'polygon' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={isDrawing && searchMode === 'polygon' ? cancelDrawing : handlePolygonMode}
           >
-            {isDrawing && searchMode === 'polygon' ? 'Avbryt' : 'Tegn område'}
+            {isDrawing && searchMode === 'polygon' ? 'Avbryt' : 'Søk på polygon'}
           </button>
-          <button type="button" className={`btn ${searchMode === 'strekning' ? 'btn-primary' : 'btn-secondary'}`} onClick={handleStrekningMode}>
-            Søk på strekning
-          </button>
+          {/*<button type="button" className={`btn ${searchMode === 'strekning' ? 'btn-primary' : 'btn-secondary'}`} onClick={handleStrekningMode}>*/}
+          {/*  Søk på strekning*/}
+          {/*</button>*/}
           <button type="button" className={`btn ${searchMode === 'stedfesting' ? 'btn-primary' : 'btn-secondary'}`} onClick={handleStedfestingMode}>
-            Stedfesting
+            Søk på stedfesting
           </button>
           <button
             type="button"
             className={`btn ${searchMode === 'vegsystemreferanse' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={handleVegsystemreferanseMode}
           >
-            Vegsystemreferanse
+            Søk på vegsystemreferanse
           </button>
           <div className="search-date-controls">
             <label className="search-date-toggle">

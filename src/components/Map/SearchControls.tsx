@@ -231,15 +231,16 @@ export default function SearchControls({ searchMode }: Props) {
   )
 
   const handleVegsystemreferanseSearch = useCallback(() => {
-    const trimmed = vegsystemreferanseInput.trim()
+    const trimmed = vegsystemreferanseInput.replace(/\s+/g, '')
     if (trimmed.length === 0) return
     // if (!isValidVegsystemreferanseSegmentering(trimmed)) {
     //   setVegsystemreferanseError('Ugyldig vegsystemreferanse. Bruk f.eks. EV18 S33D1 eller EV18 S33D1 m10-40.')
     //   return
     // }
     setVegsystemreferanseError(null)
+    setVegsystemreferanseInput(trimmed)
     setVegsystemreferanse(trimmed)
-  }, [setVegsystemreferanse, vegsystemreferanseInput])
+  }, [setVegsystemreferanse, setVegsystemreferanseInput, vegsystemreferanseInput])
 
   const handleVegsystemreferanseKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {

@@ -13,7 +13,7 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
 ## Core Workflow
 
 1. **Select Object Types** - User selects which road object types they want to find
-2. **Choose Search Mode** - Toggle between polygon, vegsystemreferanse (strekning), stedfesting, or vegsystemreferanse (segmentert) (switching mode clears other search inputs/state)
+2. **Choose Search Mode** - Toggle between polygon, stedfesting, or vegsystemreferanse (segmentert) using the mode buttons (switching mode clears other search inputs/state). The strekning mode button is currently hidden from the UI.
 3. **(Optional) Set Date Filter** - Use the "Bruk dato" checkbox and date input in the top row next to mode buttons. Date changes are applied on blur/Enter.
 4. **Define Area/Route** - Draw a small polygon or paste a polygon WKT and click "Søk"/"Kopier WKT", enter a vegsystemreferanse (e.g., "FV6666 S1"), provide stedfesting (e.g., "0.2-0.5@1234"), or enter a vegsystemreferanse to look up against segmentert vegnett
 5. **Fetch Veglenker** - Query veglenkesekvenser by polygon, vegsystemreferanse, stedfesting IDs, or veglenkesekvens IDs derived from segmentert vegnett (configurable limit, default 500, max 1000). For strekning searches (vegsystemreferanse strekning mode), fetch veglenkesekvenser and support objects (type 915 for bare vegsystem, 916 when strekning/delstrekning is present) in parallel for the active date, then clip away veglenker that do not overlap the returned support object stedfesting.
@@ -225,7 +225,7 @@ When querying vegobjekter in polygon mode, the app sends the drawn polygon direc
    - Must select at least one type before querying
 
 3. **Choose Search Mode**
-    - User toggles between polygon mode, strekning mode, and stedfesting mode
+    - User toggles between polygon mode ("Søk på polygon"), stedfesting mode ("Søk på stedfesting"), and vegsystemreferanse mode ("Søk på vegsystemreferanse")
     - Switching search mode clears inputs/state from the other modes
 
 4. **(Optional) Set Date Filter**
@@ -234,8 +234,7 @@ When querying vegobjekter in polygon mode, the app sends the drawn polygon direc
    - This affects vegobjekt query date and client-side veglenke validity filtering
 
 5. **Define Area/Route**
-   - Polygon mode: click "Tegn område" and draw a small polygon (recommended: small area), or paste a polygon WKT and click "Søk"/"Kopier WKT"
-   - Strekning mode: enter a vegsystemreferanse (e.g., "FV6666 S1") and click "Søk"
+   - Polygon mode: click "Søk på polygon" and draw a small polygon (recommended: small area), or paste a polygon WKT and click "Søk"/"Kopier WKT"
    - Stedfesting mode: enter stedfesting expressions (e.g., "1234, 0.2-0.5@5678") and click "Søk"
    - Polygon is converted to UTM33 coordinates
 
