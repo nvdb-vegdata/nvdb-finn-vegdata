@@ -38,7 +38,7 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
 
 ### Vegsystemreferanse (Segmentert) Search Mode
 - User enters a vegsystemreferanse (same format as strekning mode, e.g., "FV6666 S1")
-- The app queries the Vegnett API for segmentert vegnett: `GET /api/v4/veglenkesekvenser/segmentert?vegsystemreferanse=...` (limit 1000 segments)
+- The app queries the Vegnett API for segmentert vegnett: `GET /api/v4/veglenkesekvenser/segmentert?vegsystemreferanse=...` (limit 1000 segments), always passing the active reference date as `tidspunkt` (selected date when "Bruk dato" is enabled, otherwise today's date)
 - From each returned `Veglenkesegment`, the app extracts `veglenkesekvensid`, `startposisjon`, and `sluttposisjon`
 - Ranges per veglenkesekvens are merged (overlapping ranges are combined), yielding stedfesting filter strings in the form `{startposisjon}-{sluttposisjon}@{veglenkesekvensid}`
 - The derived veglenkesekvens IDs are used to fetch veglenkesekvenser (by ID) from the Uberiket API

@@ -74,7 +74,7 @@ export default function App() {
     data: vegsystemreferanseStedfesting,
     isLoading: vegsystemreferanseLoading,
     error: vegsystemreferanseError,
-  } = useVegsystemreferanseStedfesting(searchMode === 'vegsystemreferanse' ? vegsystemreferanse : null)
+  } = useVegsystemreferanseStedfesting(searchMode === 'vegsystemreferanse' ? vegsystemreferanse : null, referenceDate)
 
   const {
     data: veglenkeResult,

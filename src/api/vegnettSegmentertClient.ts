@@ -112,11 +112,12 @@ export function segmenteringToStedfesting(
   return { veglenkesekvensIds, stedfestingFilter: filterParts.join(',') }
 }
 
-export async function hentSegmenterteVeglenkerForVegsystemreferanse(vegsystemreferanse: string): Promise<VeglenkesegmenterSide> {
+export async function hentSegmenterteVeglenkerForVegsystemreferanse(vegsystemreferanse: string, dato: string): Promise<VeglenkesegmenterSide> {
   const response = await getVeglenkesegmenter({
     query: {
       vegsystemreferanse: [vegsystemreferanse],
       antall: SEGMENTERING_LIMIT,
+      tidspunkt: dato,
     },
   })
 
