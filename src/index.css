@@ -1658,3 +1658,13 @@ body,
   display: inline-flex;
   cursor: pointer;
 }
+
+.posisjon-api-link {
+  font-size: 0.75rem;
+  color: var(--ui-color-link, #0057b8);
+  text-decoration: none;
+}
+
+.posisjon-api-link:hover {
+  text-decoration: underline;
+}

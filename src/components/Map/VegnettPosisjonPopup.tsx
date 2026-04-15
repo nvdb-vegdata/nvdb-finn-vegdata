@@ -41,7 +41,25 @@ export default function VegnettPosisjonPopup({ results, loading, error, popupRef
                 {results.map((result, i) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: stable positional list
                   <li key={i} className="posisjon-result-item">
-                    <div className="popup-title">{result.vegsystemreferanse.kortform ?? 'Ingen vegsystemreferanse'}</div>
+                    <div className="popup-title">
+                      {result.vegsystemreferanse.kortform ?? 'Ingen vegsystemreferanse'}
+                      {result.vegsystemreferanse.kortform && (
+                        <>
+                          {'  '}
+                          <button
+                            type="button"
+                            className="posisjon-copy-btn"
+                            title="Kopier vegsystemreferanse"
+                            onClick={(event) => {
+                              const btn = event.currentTarget
+                              navigator.clipboard.writeText(result.vegsystemreferanse.kortform!).then(() => animateCopy(btn))
+                            }}
+                          >
+                            <Copy size={12} aria-hidden="true" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                     <div className="posisjon-detail">
                       <span className="posisjon-label">Lenkesekvensid</span>
                       <span className="posisjon-value">{result.veglenkesekvens.veglenkesekvensid}</span>
@@ -88,6 +106,32 @@ export default function VegnettPosisjonPopup({ results, loading, error, popupRef
                       >
                         <Copy size={12} aria-hidden="true" />
                       </button>
+                    </div>
+                    <div className="posisjon-detail">
+                      <span className="posisjon-label">Lenker</span>
+                      <span className="posisjon-value">
+                        <a
+                          href={`https://nvdbapiles.atlas.vegvesen.no/vegnett/veglenkesekvenser/segmentert/${result.veglenkesekvens.veglenkesekvensid}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="posisjon-api-link"
+                        >
+                          {' '}
+                          Les API
+                        </a>
+
+                        <span> | </span>
+
+                        <a
+                          href={`https://vegkart.atlas.vegvesen.no/#/@267951,7030995,16/lenker:links%5B0%5D=%40${result.veglenkesekvens.veglenkesekvensid}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="posisjon-api-link"
+                        >
+                          {' '}
+                          Vegkart
+                        </a>
+                      </span>
                     </div>
                   </li>
                 ))}
