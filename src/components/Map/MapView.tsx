@@ -5,7 +5,6 @@ import { click } from 'ol/events/condition'
 import Feature from 'ol/Feature'
 import WKT from 'ol/format/WKT'
 import type { LineString, Polygon, SimpleGeometry } from 'ol/geom'
-import type ImageTile from 'ol/ImageTile'
 import { Draw, Select } from 'ol/interaction'
 import TileLayer from 'ol/layer/Tile'
 import VectorLayer from 'ol/layer/Vector'
@@ -26,7 +25,6 @@ import type { PosisjonMedAvstand } from '../../api/generated/vegnett'
 import type { VeglenkesekvensMedPosisjoner, Vegobjekt } from '../../api/uberiketClient'
 import { hentVeglenkesekvenser } from '../../api/uberiketClient'
 import { hentVegnettPosisjon } from '../../api/vegnettPosisjonClient'
-import { getBaatToken, useBaatToken } from '../../hooks/useBaatToken'
 import { useHighlightRendering } from '../../hooks/useHighlightRendering'
 import { useLocateVegobjekt } from '../../hooks/useLocateVegobjekt'
 import { useVeglenkeRendering } from '../../hooks/useVeglenkeRendering'
@@ -143,8 +141,6 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
   useEffect(() => {
     setSearchDateDraft(searchDate)
   }, [searchDate])
-
-  useBaatToken()
 
   useEffect(() => {
     ;(window as unknown as { nvdbMap?: unknown }).nvdbMap = {
@@ -305,12 +301,6 @@ export default function MapView({ veglenkesekvenser, vegobjekterByType, isLoadin
         tileGrid: kartverketTileGrid,
         style: 'default',
         requestEncoding: 'KVP',
-        tileLoadFunction: (tile, src) => {
-          const token = getBaatToken()
-          const nextSrc = token && !src.includes('gkt=') ? `${src}&gkt=${token}` : src
-          const image = (tile as ImageTile).getImage() as HTMLImageElement
-          image.src = nextSrc
-        },
       }),
       maxResolution: detailResolution,
     })

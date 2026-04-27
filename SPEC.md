@@ -4,7 +4,7 @@
 
 A static web application for visualizing road objects (vegobjekter) from the Norwegian Public Roads Administration's database (NVDB) on an interactive map of Norway. The app visualizes road segments (veglenker) and shows which road objects are located on each segment.
 
-The map uses EPSG:25833 (UTM33) and switches between Geodata.no XYZ tiles for overview levels and Kartverket topo WMTS tiles for detailed views. The Kartverket tiles use a BAAT token fetched from `https://nvdb-baat-dispenser.atlas.vegvesen.no/api/v1/token`.
+The map uses EPSG:25833 (UTM33) and switches between Geodata.no XYZ tiles for overview levels and Kartverket topo WMTS tiles for detailed views.
 
 The application is in **beta** and displays a visible beta badge in the header.
 
