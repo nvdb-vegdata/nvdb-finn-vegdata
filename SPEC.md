@@ -10,6 +10,11 @@ The application is in **beta** and displays a visible beta badge in the header.
 
 Feature-specific behavior should be documented in this specification. Keep `AGENTS.md` focused on general workflow and guardrail rules.
 
+## Brukerveiledning
+
+- An info icon (ⓘ) in the sidebar header, next to the app title, links to the user guide/help content.
+- It opens the guide in a new tab and does not change the current search state or selected results.
+
 ## Core Workflow
 
 1. **Select Object Types** - User selects which road object types they want to find

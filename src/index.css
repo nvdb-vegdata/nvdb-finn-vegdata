@@ -150,6 +150,14 @@ body,
   opacity: 0.8;
 }
 
+.sidebar-header-link {
+  opacity: 0.8;
+}
+
+.sidebar-header-link:hover {
+  opacity: 1;
+}
+
 .sidebar-content {
   flex: 1;
   overflow-y: scroll;

@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue } from 'jotai'
-import { X } from 'lucide-react'
+import { Info, X } from 'lucide-react'
 import type { Polygon } from 'ol/geom'
 import { useEffect, useMemo, useState } from 'react'
 import { isSelectableVegobjekttype, type Vegobjekttype } from './api/datakatalogClient'
@@ -148,9 +148,19 @@ export default function App() {
       <aside className="sidebar">
         <header className="sidebar-header">
           <h1>
-            NVDB Finn Vegdata <span className="beta-badge">BETA</span>
+            NVDB Finn Vegdata
+            <a
+              href="https://www.nvdb.no/hent-og-se-data/nvdb-finn-vegdata/brukerveiledning-nvdb-finn-vegdata/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="sidebar-header-link"
+              title={'Brukerveiledning for NVDB Finn Vegdata'}
+            >
+              <Info size={22} color={'white'} aria-hidden="true" />
+            </a>
+            <span className="beta-badge">BETA</span>
           </h1>
-          <p>Velg objekttyper og tegn et område eller søk på strekning</p>
+          <p>Velg objekttyper og tegn et område eller søk på strekning. </p>
         </header>
 
         <div className="sidebar-content">
