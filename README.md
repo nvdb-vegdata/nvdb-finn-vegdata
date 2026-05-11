@@ -28,3 +28,20 @@ bun run dev
 - React + TypeScript
 - OpenLayers
 - TanStack Query
+
+
+
+
+## GitHub
+
+The repo is maintained in SVV Bitbucket, but mirrored as a public repository to GitHub, as a reference project. This mirroring has to be done manually.
+
+Add GitHub as a remote:
+```bash
+git remote set-url github https://github.com/nvdb-vegdata/nvdb-finn-vegdata.git
+```
+
+Push the main branch to GitHub:
+```bash 
+git push github main
+```
