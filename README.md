@@ -30,6 +30,13 @@ bun run dev
 - TanStack Query
 
 
+## Utvikling
+
+- Kjør `bun run typecheck` for å sjekke typer
+- Kjør `bun test` for å kjøre tester
+- Kjør `bun run generate:api` for å regenerere API-klienter etter endringer i spesifikasjoner. De ligger i katalogen 'specs'. 
+
+Når du gjør endringer som påvirker funksjonalitet, oppdater `SPEC.md` for å holde dokumentasjonen oppdatert.
 
 
 ## GitHub
