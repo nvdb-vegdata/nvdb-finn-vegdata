@@ -209,10 +209,24 @@ export default function App() {
             </div>
             <div className="sidebar-right-content">
               <div className="help-section">
+                <h3>Brukerveiledning</h3>
+                <ul>
+                  <li>
+                    <a
+                      href="https://www.nvdb.no/hent-og-se-data/nvdb-finn-vegdata/brukerveiledning-nvdb-finn-vegdata/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Brukerveiledning for NVDB Finn Vegdata
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              <div className="help-section">
                 <h3>Kom i gang</h3>
                 <ol>
                   <li>Velg en eller flere vegobjekttyper fra listen til venstre</li>
-                  <li>Klikk "Tegn område" for polygon, eller velg "Søk på strekning"/"Stedfesting" og skriv inn søket ditt</li>
+                  <li>Velg "Søk på strekning" eller "Søk på stedfesting" eller "Søk på vegsystemreferanse" og skriv inn søket ditt</li>
                   <li>Vegobjektene i området eller strekningen vises her</li>
                 </ol>
               </div>

@@ -14,6 +14,8 @@ Feature-specific behavior should be documented in this specification. Keep `AGEN
 
 - An info icon (ⓘ) in the sidebar header, next to the app title, links to the user guide/help content.
 - It opens the guide in a new tab and does not change the current search state or selected results.
+- When no vegobjekter are shown yet, the right sidebar displays a help panel with three sections: `Brukerdokumentasjon`, `Kom i gang`, and `Tips`.
+- The `Brukerdokumentasjon` section contains a link to the NVDB Finn Vegdata user guide: `https://www.nvdb.no/hent-og-se-data/nvdb-finn-vegdata/brukerveiledning-nvdb-finn-vegdata/`.
 
 ## Core Workflow
 
