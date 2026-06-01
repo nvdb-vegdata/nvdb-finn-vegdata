@@ -1,7 +1,4 @@
 credentials:
-  atlas: nvdbapil-atlas
-  git: apnevegdata.admin
-  artifactory: artrepo
   refreshToken: refreshToken-Nvdbapil
 releaseBranch: main
 iktlosning: nvdbapil

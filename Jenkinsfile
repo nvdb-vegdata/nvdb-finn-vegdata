@@ -14,7 +14,7 @@ def params = [
 pipeline {
     agent any
     tools {
-        nodejs 'node20'
+        nodejs 'node24'
     }
     environment {
         HTTP_PROXY = 'http://proxy.vegvesen.no:8080'
