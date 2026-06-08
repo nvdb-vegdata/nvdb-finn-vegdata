@@ -26,6 +26,7 @@ import {
   veglenkesekvensLimitAtom,
   vegsystemreferanseAtom,
 } from './state/atoms'
+import SVVLogo from './svv_hvit.svg'
 import { getTodayDate } from './utils/dateUtils'
 import { ensureProjections } from './utils/projections'
 import { parseStedfestingInput } from './utils/stedfestingParser'
@@ -147,20 +148,23 @@ export default function App() {
     <div className="app">
       <aside className="sidebar">
         <header className="sidebar-header">
-          <h1>
-            NVDB Finn Vegdata
+          <a className="logo" href="/">
+            <img alt="Statens vegvesen logo" src={SVVLogo} />
+            <div className="divider" />
+            <h1>NVDB Finn vegdata</h1>
+          </a>
+          <div className="sidebar-header-actions">
             <a
               href="https://www.nvdb.no/hent-og-se-data/nvdb-finn-vegdata/brukerveiledning-nvdb-finn-vegdata/"
               target="_blank"
               rel="noopener noreferrer"
               className="sidebar-header-link"
-              title={'Brukerveiledning for NVDB Finn Vegdata'}
+              title="Brukerveiledning for NVDB Finn Vegdata"
             >
-              <Info size={22} color={'white'} aria-hidden="true" />
+              <Info size={22} color="white" aria-hidden="true" />
             </a>
             <span className="beta-badge">BETA</span>
-          </h1>
-          <p>Velg objekttyper og tegn et område eller søk på strekning. </p>
+          </div>
         </header>
 
         <div className="sidebar-content">

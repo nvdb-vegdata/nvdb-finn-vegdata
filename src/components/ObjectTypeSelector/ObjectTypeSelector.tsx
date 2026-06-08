@@ -119,8 +119,13 @@ export default function ObjectTypeSelector() {
 
   return (
     <div>
+      <div className="section-header-description">
+        <p>Velg objekttyper og tegn et område eller søk på strekning. </p>
+      </div>
       <div className="section-header-row">
-        <div className="section-header">Vegobjekttyper</div>
+        <div className="section-header">
+          <h2>Vegobjekttyper</h2>
+        </div>
         <div className="limit-inline">
           <label htmlFor="veglenke-limit">Maks veglenkesekvenser</label>
           <select id="veglenke-limit" className="limit-select" value={veglenkesekvensLimit} onChange={(e) => setVeglenkesekvensLimit(Number(e.target.value))}>
