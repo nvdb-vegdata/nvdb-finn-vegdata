@@ -9,16 +9,22 @@ body,
 #root {
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+  color: var(--color-text-default);
 }
 
 :root {
   --color-primary: #0b5cab;
-  --color-svv-primary-base: #444f55;
   --color-primary-hover: #084b8b;
   --color-secondary: #374151;
   --color-secondary-hover: #1f2937;
   --color-danger: #b42318;
   --color-danger-hover: #7a271a;
+
+  --color-svv-primary-base: #444f55;
+  --color-svv-brand-orange: #ff9600;
+  --color-text-subtle: #555f64;
+  --color-text-default: #262c30;
+
   --btn-disabled-bg: #e5e7eb;
   --btn-disabled-text: #374151;
   --btn-disabled-border: #d1d5db;
@@ -27,7 +33,7 @@ body,
 
   --ui-surface: #ffffff;
   --ui-surface-hover: #f7f7f7;
-  --ui-border: #dddddd;
+  --ui-border: #ddd;
   --ui-text: #2c3e50;
   --ui-radius-sm: 4px;
   --ui-radius-md: 8px;
@@ -139,7 +145,7 @@ body,
 }
 
 .logo:focus-visible {
-  outline: 2px solid #ff6900;
+  outline: 2px solid var(--color-svv-brand-orange);
   border-radius: 4px;
 }
 
@@ -159,7 +165,7 @@ body,
   min-width: 350px;
   height: 100%;
   background: #f5f5f5;
-  border-right: 1px solid #ddd;
+  border-right: 1px solid var(--ui-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -269,7 +275,7 @@ body,
   min-width: 325px;
   height: 100%;
   background: #f5f5f5;
-  border-left: 1px solid #ddd;
+  border-left: 1px solid var(--ui-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -317,7 +323,6 @@ body,
   margin: 0;
   padding-left: 20px;
   font-size: 13px;
-  color: #555;
 }
 
 .help-section li {
@@ -326,10 +331,11 @@ body,
 }
 
 .section-header-description {
-  color: #555f64;
-  margin-bottom: 8px;
+  color: var(--color-text-subtle);
+  margin-bottom: 10px;
   font-size: 14px;
 }
+
 .section-header-row {
   display: flex;
   align-items: center;
@@ -374,7 +380,7 @@ body,
 .category-select {
   width: 100%;
   padding: 8px 36px 8px 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--ui-border);
   border-radius: 4px;
   font-size: 13px;
   background-color: white;
@@ -401,7 +407,7 @@ body,
 .limit-select {
   min-width: 70px;
   padding: 4px 6px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--ui-border);
   border-radius: 4px;
   font-size: 12px;
 }
@@ -455,7 +461,7 @@ body,
 .search-input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--ui-border);
   border-radius: 4px;
   font-size: 14px;
   margin-bottom: 12px;
@@ -476,7 +482,7 @@ body,
   align-items: flex-start;
   padding: 10px;
   background: white;
-  border: 1px solid #ddd;
+  border: 1px solid var(--ui-border);
   border-radius: 4px;
   margin-bottom: 8px;
   cursor: pointer;
@@ -821,7 +827,7 @@ body,
 .status-bar {
   padding: 12px 16px;
   background: #ecf0f1;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--ui-border);
   font-size: 12px;
   color: #666;
 }
@@ -957,7 +963,7 @@ body,
   font-weight: 600;
   margin-bottom: 8px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--ui-border);
   cursor: text;
 }
 
@@ -975,7 +981,7 @@ body,
   margin-top: 16px;
   padding: 12px;
   background: white;
-  border: 1px solid #ddd;
+  border: 1px solid var(--ui-border);
   border-radius: 4px;
 }
 
@@ -1051,7 +1057,7 @@ body,
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background: #2c3e50;
+  background: var(--color-svv-primary-base);
   color: white;
 }
 
@@ -1123,7 +1129,7 @@ body,
 
 .vegobjekt-type-group {
   background: white;
-  border: 1px solid #ddd;
+  border: 1px solid var(--ui-border);
   border-radius: 4px;
   margin-bottom: 8px;
 }
@@ -1169,7 +1175,7 @@ body,
 }
 
 .vegobjekt-type-content {
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--ui-border);
   list-style: none;
   margin: 0;
   padding: 0;
@@ -1247,7 +1253,7 @@ body,
 }
 
 .vegobjekt-action-btn {
-  border: 1px solid #ddd;
+  border: 1px solid var(--ui-border);
   border-radius: 4px;
   background: #fff;
   color: #555;
@@ -1378,7 +1384,7 @@ body,
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid #ddd;
+  border: 2px solid var(--ui-border);
   border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -1482,7 +1488,7 @@ body,
   position-area: block-end span-inline-start;
   margin-top: 4px;
   padding: 4px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--ui-border);
   border-radius: 6px;
   background: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
@@ -1527,7 +1533,7 @@ body,
   justify-self: end;
   margin-top: 4px;
   padding: 8px 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--ui-border);
   border-radius: 8px;
   background: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
@@ -1719,7 +1725,7 @@ body,
 }
 
 .posisjon-copy-btn {
-  border: 1px solid #ddd;
+  border: 1px solid var(--ui-border);
   background: #fff;
   color: #555;
   display: inline-flex;

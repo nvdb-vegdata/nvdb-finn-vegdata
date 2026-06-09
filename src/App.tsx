@@ -151,7 +151,7 @@ export default function App() {
           <a className="logo" href="/">
             <img alt="Statens vegvesen logo" src={SVVLogo} />
             <div className="divider" />
-            <h1>NVDB Finn vegdata</h1>
+            <h1>NVDB Finn Vegdata</h1>
           </a>
           <div className="sidebar-header-actions">
             <a
